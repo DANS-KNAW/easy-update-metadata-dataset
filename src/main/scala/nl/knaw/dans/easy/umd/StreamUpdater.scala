@@ -19,7 +19,9 @@ import com.yourmediashelf.fedora.client.FedoraClient
 import com.yourmediashelf.fedora.client.request.FedoraRequest
 import nl.knaw.dans.easy.umd.StreamUpdater.log
 import org.slf4j.LoggerFactory
+import resource._
 
+import scala.util.{Failure, Success, Try}
 
 trait StreamUpdater {
 
@@ -44,15 +46,15 @@ class TestStreamUpdater extends AbstractFedoraStreamUpdater {
 }
 
 class FedoraStreamUpdater(timeout: Long = 1000L) extends AbstractFedoraStreamUpdater {
-  def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]) = {
+  def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]): Try[Unit] = {
     log.info(s"executing request for $pid/$streamId")
-    request.execute().getStatus match {
+    managed(request.execute()).acquireAndGet(_.getStatus match {
       case 200 => log.info(s"saved $pid/$streamId")
+        Success(Unit)
       case status =>
-        val message = s"got status $status"
-        log.info(message)
-        new IllegalStateException(message)
-    }
+        Failure(new IllegalStateException(s"got status $status"))
+    }) // TODO catch and flatmap exception thrown by acquireAndGet or
+    // https://github.com/DANS-KNAW/easy-app/blob/419d5b06f/tool/task-change-set-to-openaccess/src/main/scala/nl/knaw/dans/easy/task/StreamUpdater.scala#L21-L35
   }
 }
 

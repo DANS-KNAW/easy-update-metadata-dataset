@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.module
+package nl.knaw.dans.easy.umd
 
-import java.io.{File, PrintWriter}
-import java.net.URL
+import java.io.File
 
-import nl.knaw.dans.easy.license.CommandLineOptions._
-import nl.knaw.dans.easy.license.Parameters
+import nl.knaw.dans.easy.umd.{Parameters, Version}
 import org.apache.commons.configuration.PropertiesConfiguration
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
 
 class CommandLineOptions(args: Array[String]) extends ScallopConf(args) {
 
-  import CommandLineOptions.log
+  appendDefaultToDescription = true
+  editBuilder(_.setHelpWidth(110))
 
   printedName = "easy-update-metadata-dataset"
   val _________ = " " * printedName.length
@@ -52,6 +51,7 @@ object CommandLineOptions {
 
   def parse(args: Array[String]): Parameters = {
     log.debug("Loading application properties ...")
+    val homeDir = new File(System.getProperty("app.home"))
     val props = {
       val ps = new PropertiesConfiguration()
       ps.setDelimiterParsingDisabled(true)

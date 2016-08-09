@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.module
+package nl.knaw.dans.easy.umd
 
 import org.slf4j.LoggerFactory
-import nl.knaw.dans.easy.module.{CommandLineOptions => cmd}
+import nl.knaw.dans.easy.umd.{CommandLineOptions => cmd}
 
 object Command {
   val log = LoggerFactory.getLogger(getClass)

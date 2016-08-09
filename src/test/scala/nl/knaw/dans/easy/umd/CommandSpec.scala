@@ -13,26 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy
+package nl.knaw.dans.easy.umd
 
-import java.util.Properties
+import org.scalamock.scalatest.MockFactory
+import org.scalatest._
 
-package object umd {
-
-  val homeDir = new File(System.getProperty("app.home"))
-
-  case class Parameters(/* Insert parameters */) {
-    override def toString: String =
-      s"<Replace with nicely formatted string with name-value style output of parameters>"
-  }
-
-  object Version {
-    def apply(): String = {
-      val props = new Properties()
-      props.load(getClass.getResourceAsStream("/Version.properties"))
-      props.getProperty("application.version")
-    }
-  }
-
+// Remove or add traits as needed <-- remove this comment
+class CommandSpec extends FlatSpec with Matchers with Inside with MockFactory with OneInstancePerTest {
 
 }

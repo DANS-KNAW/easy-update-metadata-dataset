@@ -43,6 +43,7 @@ class CommandLineOptions(args: Array[String]) extends ScallopConf(args) {
            |""".stripMargin)
   //val url = opt[String]("someOption", noshort = true, descr = "Description of the option", default = Some("Default value"))
   footer("")
+  verify()
 }
 
 object CommandLineOptions {

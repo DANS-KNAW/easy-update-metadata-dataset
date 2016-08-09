@@ -16,13 +16,18 @@
 package nl.knaw.dans.easy.umd
 
 import java.io.File
+import java.net.URL
 
+import com.yourmediashelf.fedora.client.FedoraCredentials
+import nl.knaw.dans.easy.umd.CommandLineOptions.log
 import nl.knaw.dans.easy.umd.{Parameters, Version}
 import org.apache.commons.configuration.PropertiesConfiguration
-import org.rogach.scallop.ScallopConf
+import org.rogach.scallop._
 import org.slf4j.LoggerFactory
 
-class CommandLineOptions(args: Array[String]) extends ScallopConf(args) {
+import scala.util.{Failure, Success, Try}
+
+class CommandLineOptions(args: Array[String] = "-f http:// -fedora-username u -fedora-password p -s s -t t README.md".split(" ")) extends ScallopConf(args) {
 
   appendDefaultToDescription = true
   editBuilder(_.setHelpWidth(110))
@@ -31,17 +36,62 @@ class CommandLineOptions(args: Array[String]) extends ScallopConf(args) {
   val _________ = " " * printedName.length
 
   version(s"$printedName v${Version()}")
-  banner(s"""
-           |Batch-updates metadata streams in a Fedora Commons repository
-           |
+  banner(
+    s"""
+       |Batch-updates metadata streams in a Fedora Commons repository
+       |
            |Usage:
-           |
+       |
            |$printedName <synopsis of command line parameters>
-           |${_________} <...possibly continued here>
-           |
+       |${_________} <...possibly continued here>
+       |
            |Options:
-           |""".stripMargin)
-  //val url = opt[String]("someOption", noshort = true, descr = "Description of the option", default = Some("Default value"))
+       |""".stripMargin)
+
+  private val shouldBeFile = singleArgConverter(value =>
+    new File(value) match {
+      case f if f.isFile => f
+      case _ => throw createExecption(s"'$value' is not a file")
+    }
+  )
+  private val shouldBeDir = singleArgConverter(value =>
+    new File(value) match {
+      case f if f.isDirectory => f
+      case _ => throw createExecption(s"'$value' is not a directory")
+    }
+  )
+  private val shouldBeUrl = singleArgConverter(value =>
+    Try {
+      new URL(value)
+    } match {
+      case Success(url) => value
+      case Failure(e) => throw createExecption(s"'$value' is not a valid url: ${e.getMessage}")
+    }
+  )
+
+  private def createExecption(msg: String) = {
+    log.error(msg)
+    new IllegalArgumentException(msg)
+  }
+
+
+  val doUpdate = opt[Boolean](name = "doUpdate", noshort = true,
+    descr = "Without this argument no changes are made to the repository, the default is a test mode that logs the intended changes",
+    default = Some(false))
+
+  val streamID = opt[String](name = "stream-id", short = 's', required = true, descr = "id of fedoara stream to update")
+  val tag = opt[String](name = "tag", short = 't', required = true, descr = "xml tag to change")
+
+  val fedoraUrl = opt[String](name = "fedora-url", short = 'f',
+    descr = "Base url for the fedora repository",
+    default = Some("http://localhost:8080/fedora"))(shouldBeUrl)
+  val fedoraUsername = opt[String](name = "fedora-username", noshort = true,
+    descr = "Username for fedora repository, if omitted provide it on stdin")
+  val fedoraPassword = opt[String](name = "fedora-password", noshort = true,
+    descr = "Password for fedora repository, if omitted provide it on stdin")
+
+  val inputFile = trailArg[File](name = "input-file", required = true, descr = "The CSV file with required changes. Columns: fedoraID, new value, optional old value")(shouldBeFile)
+
   footer("")
   verify()
 }
@@ -51,24 +101,45 @@ object CommandLineOptions {
   val log = LoggerFactory.getLogger(getClass)
 
   def parse(args: Array[String]): Parameters = {
-    log.debug("Loading application properties ...")
-    val homeDir = new File(System.getProperty("app.home"))
-    val props = {
-      val ps = new PropertiesConfiguration()
-      ps.setDelimiterParsingDisabled(true)
-      ps.load(new File(homeDir, "cfg/application.properties"))
+    /*
+        log.debug("Loading application properties ...")
+        val homeDir = new File(System.getProperty("app.home"))
+        val props = {
+          val ps = new PropertiesConfiguration()
+          ps.setDelimiterParsingDisabled(true)
+          ps.load(new File(homeDir, "cfg/application.properties"))
 
-      ps
-    }
+          ps
+        }
+    */
 
     log.debug("Parsing command line ...")
     val opts = new CommandLineOptions(args)
 
+    val fedoraUrl = new URL(opts.fedoraUrl())
+
+    // TODO try properties before asking?
+    val fedoraUser = opts.fedoraUsername.get.getOrElse(ask(fedoraUrl.toString, "user name"))
+    val fedoraPassword = opts.fedoraPassword.get.getOrElse(askPassword(fedoraUser, fedoraUrl.toString))
+    val fedoraCredentials = new FedoraCredentials(fedoraUrl, fedoraUser, fedoraPassword) {
+      override def toString = s"fedora url ${fedoraUrl.toString} user $fedoraUser" // prevents logging a password
+    }
+
     // Fill Parameters with values from command line
-    val params = Parameters()
+    val params = Parameters(opts.streamID(), opts.tag(), !opts.doUpdate(), fedoraCredentials)
 
     log.debug(s"Using the following settings: $params")
 
     params
+  }
+
+  def ask(url: String, prompt: String): String = {
+    print(s"$prompt for $url: ")
+    System.console().readLine()
+  }
+
+  def askPassword(user: String, url: String): String = {
+    print(s"Password for $user on $url: ")
+    System.console().readPassword().mkString
   }
 }

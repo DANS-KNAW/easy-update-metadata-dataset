@@ -18,13 +18,18 @@ package nl.knaw.dans.easy
 import java.io.File
 import java.util.Properties
 
+import com.yourmediashelf.fedora.client.FedoraCredentials
+
 package object umd {
 
   val homeDir = new File(System.getProperty("app.home"))
 
-  case class Parameters(/* Insert parameters */) {
-    override def toString: String =
-      s"<Replace with nicely formatted string with name-value style output of parameters>"
+  case class Parameters(streamID: String,
+                        tag: String,
+                        test: Boolean,
+                        fedoraCredentials: FedoraCredentials
+                       ) {
+    //override def toString: String = s"streamID: $streamID, tag: $tag, fedoraCredentials: $fedoraCredentials"
   }
 
   object Version {

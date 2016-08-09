@@ -2,13 +2,11 @@ easy-update-metadata-dataset
 ===========
 [![Build Status](https://travis-ci.org/DANS-KNAW/easy-update-metadata-dataset.png?branch=master)](https://travis-ci.org/DANS-KNAW/easy-update-metadata-dataset)
 
-<Remove this comment and extend the descriptions below>
-
 
 SYNOPSIS
 --------
 
-    easy-update-metadata-dataset params
+    easy-update-metadata-dataset --stream-id [EMD|DC|...] --tag [accessRights|rights|...] <datasets.csv>
 
 
 DESCRIPTION
@@ -20,11 +18,19 @@ Batch-updates metadata streams of datasets in a Fedora Commons repository
 ARGUMENTS
 ---------
 
-<Replace with output from --help option on the command line>
+          --doUpdate                 Without this argument no changes are made to the repository, the default is a
+                                     test mode that logs the intended changes
+          --fedora-password  <arg>   Password for fedora repository, if omitted provide it on stdin
+      -f, --fedora-url  <arg>        Base url for the fedora repository (default = http://localhost:8080/fedora)
+          --fedora-username  <arg>   Username for fedora repository, if omitted provide it on stdin
+      -s, --stream-id  <arg>         id of fedoara stream to update
+      -t, --tag  <arg>               xml tag to change
+          --help                     Show help message
+          --version                  Show version of this program
+    
+     trailing arguments:
+      input-file (required)   The CSV file with required changes. Columns: fedoraID, new value, optional old value
 
-
-
-`easy-update-metadata-dataset -o value`
 
 
 INSTALLATION AND CONFIGURATION

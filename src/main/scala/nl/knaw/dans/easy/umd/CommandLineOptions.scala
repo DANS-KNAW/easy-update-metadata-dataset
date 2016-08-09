@@ -32,7 +32,7 @@ class CommandLineOptions(args: Array[String]) extends ScallopConf(args) {
 
   version(s"$printedName v${Version()}")
   banner(s"""
-           |<Replace with one sentence describing the main task of this module>
+           |Batch-updates metadata streams in a Fedora Commons repository
            |
            |Usage:
            |

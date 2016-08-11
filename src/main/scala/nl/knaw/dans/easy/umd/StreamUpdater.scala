@@ -25,14 +25,13 @@ import scala.util.{Failure, Success, Try}
 
 trait StreamUpdater {
 
-  def updateDatastream(pid: String, streamId: String, content: String)
+  def updateDatastream(pid: String, streamId: String, content: String): Try[Unit]
 }
 
 abstract class AbstractFedoraStreamUpdater(timeout: Long = 1000L) extends StreamUpdater {
 
   def updateDatastream(pid: String, streamId: String, content: String) = {
     log.info(s"updating $pid/$streamId")
-    log.debug(s"new content for $pid/$streamId:\n$content")
     val request = FedoraClient.modifyDatastream(pid, streamId).content(content)
     executeRequest(pid, streamId, request)
   }

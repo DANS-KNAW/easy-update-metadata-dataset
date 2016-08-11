@@ -37,29 +37,33 @@ object Command {
     val ps = cmd.parse(args)
     FedoraRequest.setDefaultClient(new FedoraClient(ps.fedoraCredentials))
     run(ps) match {
-      case _: Success[_] => log.info ("success")
-      case e: Failure[_] => log.error (s"failed", e)
+      case f: Failure[_] => log.error (s"failed", f.exception)
+      case s: Success[List[Throwable]] if s.get.nonEmpty=> log.error (s"${s.get.length} failures")
+      case s: Success[List[Throwable]] => log.info ("success")
     }
   }
 
-  def run(implicit ps: Parameters): Try[Unit] = {
+  def run(implicit ps: Parameters): Try[List[Throwable]] = {
     for {
       list <- parse(ps.input)
-      _ = log.debug(s"parsed ${list.length} records")
-      updates <- Try{list.foreach(update)}
-    // TODO count/log update failures
-    } yield ()
+      _ = log.info(s"parsed ${list.length} records")
+      failures = list.map(update).filter(_.isFailure).map(_.failed.get)
+      _ = failures.foreach(t => log.error (t.getMessage,t))
+      _ = log.info(s"processed ${list.length} records")
+    } yield failures
   }
 
-  def update(record: Record)(implicit ps: Parameters) = Try {
+  def update(record: Record)(implicit ps: Parameters) = {
     log.info(s"${record.fedoraPid}, ${record.newValue}")
     for {
       oldXML <- StreamReader.getXml(record.fedoraPid, ps.streamID)
-      newXML <- Try {transformer(ps.tag, record.newValue).transform(oldXML)}
-      equal = oldXML.toString() == newXML.toString()
-      _ = log.info(s"old ${oldXML.toString().lines.toList.diff(newXML.toString().lines.toList)}")
-      _ = log.info(s"new ${newXML.toString().lines.toList.diff(oldXML.toString().lines.toList)}")
-    // TODO update
+      newXML = transformer(ps.tag, record.newValue).transform(oldXML)
+      oldLines = oldXML.toString().lines.toList
+      newLines = newXML.toString().lines.toList
+      _ = log.info(s"old ${ps.streamID} ${oldLines.diff(newLines)}")
+      _ = log.info(s"new ${ps.streamID} ${newLines.diff(oldLines)}")
+      _ <- if (oldXML != newXML) StreamUpdater().updateDatastream(record.fedoraPid,ps.streamID,newXML.toString()) else Success(())
+      // _ <- Failure(new Exception("test error handling"))
     } yield ()
   }
 

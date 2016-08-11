@@ -56,13 +56,13 @@ object Command {
   def update(record: Record)(implicit ps: Parameters) = {
     log.info(s"${record.fedoraPid}, ${record.newValue}")
     for {
-      oldXML <- StreamReader.getXml(record.fedoraPid, ps.streamID)
+      oldXML <- FedoraStreams().getXml(record.fedoraPid, ps.streamID)
       newXML = transformer(ps.tag, record.newValue).transform(oldXML)
       oldLines = oldXML.toString().lines.toList
       newLines = newXML.toString().lines.toList
       _ = log.info(s"old ${ps.streamID} ${oldLines.diff(newLines)}")
       _ = log.info(s"new ${ps.streamID} ${newLines.diff(oldLines)}")
-      _ <- if (oldXML != newXML) StreamUpdater().updateDatastream(record.fedoraPid,ps.streamID,newXML.toString()) else Success(())
+      _ <- if (oldXML != newXML) FedoraStreams().updateDatastream(record.fedoraPid,ps.streamID,newXML.toString()) else Success(())
       // _ <- Failure(new Exception("test error handling"))
     } yield ()
   }

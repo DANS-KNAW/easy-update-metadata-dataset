@@ -16,19 +16,22 @@
 package nl.knaw.dans.easy.umd
 
 import com.yourmediashelf.fedora.client.FedoraClient
+import com.yourmediashelf.fedora.client.FedoraClient._
 import com.yourmediashelf.fedora.client.request.FedoraRequest
-import nl.knaw.dans.easy.umd.StreamUpdater.log
+import nl.knaw.dans.easy.umd.FedoraStreams.log
 import org.slf4j.LoggerFactory
 import resource._
 
 import scala.util.{Failure, Success, Try}
+import scala.xml.{Elem, XML}
 
-trait StreamUpdater {
+trait FedoraStreams {
 
   def updateDatastream(pid: String, streamId: String, content: String): Try[Unit]
+  def getXml(pid: String, streamId: String): Try[Elem]
 }
 
-abstract class AbstractFedoraStreamUpdater(timeout: Long = 1000L) extends StreamUpdater {
+abstract class AbstractFedoraFedoraStreams(timeout: Long = 1000L) extends FedoraStreams {
 
   def updateDatastream(pid: String, streamId: String, content: String) = {
     log.info(s"updating $pid/$streamId")
@@ -36,15 +39,22 @@ abstract class AbstractFedoraStreamUpdater(timeout: Long = 1000L) extends Stream
     executeRequest(pid, streamId, request)
   }
 
+  def getXml(pid: String, streamId: String): Try[Elem] = {
+    Try(XML.load(
+      // TODO close stream resulting from execute
+      getDatastreamDissemination(pid, streamId).execute().getEntityInputStream
+    ))
+  }
+
   def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]): Try[Unit]
 }
 
-class TestStreamUpdater extends AbstractFedoraStreamUpdater {
+class TestFedoraStreams extends AbstractFedoraFedoraStreams {
   def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]) =
     Success(log.info(s"test-mode: skipping request for $pid/$streamId"))
 }
 
-class FedoraStreamUpdater(timeout: Long = 1000L) extends AbstractFedoraStreamUpdater {
+class FedoraFedoraStreams(timeout: Long = 1000L) extends AbstractFedoraFedoraStreams {
   def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]) = {
     log.info(s"executing request for $pid/$streamId")
     managed(request.execute()).acquireAndGet(_.getStatus match {
@@ -57,11 +67,11 @@ class FedoraStreamUpdater(timeout: Long = 1000L) extends AbstractFedoraStreamUpd
   }
 }
 
-object StreamUpdater {
+object FedoraStreams {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  def apply(timeout: Long = 1000L)(implicit parameters: Parameters): StreamUpdater =
-    if (parameters.test) new TestStreamUpdater
-    else new FedoraStreamUpdater(timeout)
+  def apply(timeout: Long = 1000L)(implicit parameters: Parameters): FedoraStreams =
+    if (parameters.test) new TestFedoraStreams
+    else new FedoraFedoraStreams(timeout)
 }

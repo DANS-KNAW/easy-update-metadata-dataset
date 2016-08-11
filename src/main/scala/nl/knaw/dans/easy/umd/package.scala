@@ -22,8 +22,6 @@ import com.yourmediashelf.fedora.client.FedoraCredentials
 
 package object umd {
 
-  val homeDir = new File(System.getProperty("app.home"))
-
   case class Parameters(streamID: String,
                         tag: String,
                         test: Boolean,

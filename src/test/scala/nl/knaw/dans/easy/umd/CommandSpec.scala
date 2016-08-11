@@ -15,10 +15,51 @@
  */
 package nl.knaw.dans.easy.umd
 
-import org.scalamock.scalatest.MockFactory
+import java.net.{HttpURLConnection, URL}
+
+import com.yourmediashelf.fedora.client.FedoraClient
+import com.yourmediashelf.fedora.client.request.FedoraRequest
 import org.scalatest._
 
-// Remove or add traits as needed <-- remove this comment
-class CommandSpec extends FlatSpec with Matchers with Inside with MockFactory with OneInstancePerTest {
+import scala.util.{Failure, Success, Try}
+
+class CommandSpec extends FlatSpec with Matchers {
+
+  val url = "http://deasy.dans.knaw.nl:8080/fedora"
+  val credentials = s"-f $url --fedora-username easy_webui --fedora-password easy_webui"
+  val input = "src/test/resources/deasy-input.csv"
+
+  "run" should "have no failures for EMD" in {
+    assume(canConnect(Array(url)))
+    val s = s"-s EMD -t accessRights $credentials $input"
+    val ps = CommandLineOptions.parse(s.split(" "))
+    FedoraRequest.setDefaultClient(new FedoraClient(ps.fedoraCredentials))
+    Command.run(CommandLineOptions.parse(s.split(" "))).get.length shouldBe 0
+  }
+
+  it should "have no failures for DC" in {
+    assume(canConnect(Array(url)))
+    val s = s"-s DC -t rights $credentials $input"
+    Command.run(CommandLineOptions.parse(s.split(" "))).get.length shouldBe 0
+  }
+
+  it should "have a failure for BLABLA" in {
+    assume(canConnect(Array(url)))
+    val s = s"-s BLABLA -t xyz $credentials $input"
+    Command.run(CommandLineOptions.parse(s.split(" "))).get.length shouldBe 1
+  }
+
+  def canConnect(urls: Array[String]): Boolean = Try {
+    urls.map { url =>
+      new URL(url).openConnection match {
+        case connection: HttpURLConnection =>
+          connection.setConnectTimeout(1000)
+          connection.connect()
+          connection.disconnect()
+          true
+        case _ => throw new Exception
+      }
+    }
+  }.isSuccess
 
 }

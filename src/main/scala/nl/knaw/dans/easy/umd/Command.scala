@@ -37,23 +37,28 @@ object Command {
     val ps = cmd.parse(args)
     FedoraRequest.setDefaultClient(new FedoraClient(ps.fedoraCredentials))
     run(ps) match {
-      case f: Failure[_] => log.error (s"failed", f.exception)
-      case s: Success[List[Throwable]] if s.get.nonEmpty=> log.error (s"${s.get.length} failures")
-      case s: Success[List[Throwable]] => log.info ("success")
+      case s: Success[List[Any]] if s.get.nonEmpty => () // logged by run
+      case f: Failure[_] => log.error(s"failed", f.exception)
+      case s: Success[_] => log.info("success")
     }
   }
 
-  def run(implicit ps: Parameters): Try[List[Throwable]] = {
+  def run(implicit ps: Parameters): Try[List[Any]] = {
     for {
       list <- parse(ps.input)
       _ = log.info(s"parsed ${list.length} records")
-      failures = list.map(update).filter(_.isFailure).map(_.failed.get)
-      _ = failures.foreach(t => log.error (t.getMessage,t))
-      _ = log.info(s"processed ${list.length} records")
+      failures = list.map(record => (record, update(record))).filter(_._2.isFailure).map(reportError)
+      _ = log.info(s"processed ${list.length} records with ${failures.length} failures")
     } yield failures
   }
 
-  def update(record: Record)(implicit ps: Parameters) = {
+  def reportError(tuple: (Record, Try[Unit])): Any = {
+    val (record, result) = tuple
+    val throwable = result.failed.get
+    log.error(s"failed to process ${record.fedoraPid} ${record.newValue}", throwable)
+  }
+
+  def update(record: Record)(implicit ps: Parameters): Try[Unit] = {
     log.info(s"${record.fedoraPid}, ${record.newValue}")
     for {
       oldXML <- FedoraStreams().getXml(record.fedoraPid, ps.streamID)
@@ -62,8 +67,7 @@ object Command {
       newLines = newXML.toString().lines.toList
       _ = log.info(s"old ${ps.streamID} ${oldLines.diff(newLines)}")
       _ = log.info(s"new ${ps.streamID} ${newLines.diff(oldLines)}")
-      _ <- if (oldXML != newXML) FedoraStreams().updateDatastream(record.fedoraPid,ps.streamID,newXML.toString()) else Success(())
-      // _ <- Failure(new Exception("test error handling"))
+      _ <- if (oldXML != newXML) FedoraStreams().updateDatastream(record.fedoraPid, ps.streamID, newXML.toString()) else Success(())
     } yield ()
   }
 

@@ -98,24 +98,11 @@ object CommandLineOptions {
   val log = LoggerFactory.getLogger(getClass)
 
   def parse(args: Array[String]): Parameters = {
-    /*
-        log.debug("Loading application properties ...")
-        val homeDir = new File(System.getProperty("app.home"))
-        val props = {
-          val ps = new PropertiesConfiguration()
-          ps.setDelimiterParsingDisabled(true)
-          ps.load(new File(homeDir, "cfg/application.properties"))
-
-          ps
-        }
-    */
-
     log.debug("Parsing command line ...")
     val opts = new CommandLineOptions(args)
 
     val fedoraUrl = new URL(opts.fedoraUrl())
 
-    // TODO try properties before asking?
     val fedoraUser = opts.fedoraUsername.get.getOrElse(ask(fedoraUrl.toString, "user name"))
     val fedoraPassword = opts.fedoraPassword.get.getOrElse(askPassword(fedoraUser, fedoraUrl.toString))
     val fedoraCredentials = new FedoraCredentials(fedoraUrl, fedoraUser, fedoraPassword) {

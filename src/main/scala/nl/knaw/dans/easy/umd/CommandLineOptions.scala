@@ -21,13 +21,12 @@ import java.net.URL
 import com.yourmediashelf.fedora.client.FedoraCredentials
 import nl.knaw.dans.easy.umd.CommandLineOptions.log
 import nl.knaw.dans.easy.umd.{Parameters, Version}
-import org.apache.commons.configuration.PropertiesConfiguration
 import org.rogach.scallop._
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
 
-class CommandLineOptions(args: Array[String] = "-f http:// -fedora-username u -fedora-password p -s s -t t README.md".split(" ")) extends ScallopConf(args) {
+class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/resources/deasy-input.csv".split(" ")) extends ScallopConf(args) {
 
   appendDefaultToDescription = true
   editBuilder(_.setHelpWidth(110))
@@ -40,12 +39,11 @@ class CommandLineOptions(args: Array[String] = "-f http:// -fedora-username u -f
     s"""
        |Batch-updates metadata streams in a Fedora Commons repository
        |
-           |Usage:
+       |Usage:
        |
-           |$printedName <synopsis of command line parameters>
-       |${_________} <...possibly continued here>
+       |$printedName --stream-id [EMD|DC|...] --tag [accessRights|rights|...] <datasets.csv>
        |
-           |Options:
+       |Options:
        |""".stripMargin)
 
   private val shouldBeFile = singleArgConverter(value =>
@@ -90,7 +88,7 @@ class CommandLineOptions(args: Array[String] = "-f http:// -fedora-username u -f
   val fedoraPassword = opt[String](name = "fedora-password", noshort = true,
     descr = "Password for fedora repository, if omitted provide it on stdin")
 
-  val inputFile = trailArg[File](name = "input-file", required = true, descr = "The CSV file with required changes. Columns: fedoraID, new value, optional old value")(shouldBeFile)
+  val inputFile = trailArg[File](name = "input-file", required = true, descr = "The CSV file with required changes. Columns: fedoraID, newValue. First line is assumed to be a header.")(shouldBeFile)
 
   footer("")
   verify()
@@ -122,11 +120,11 @@ object CommandLineOptions {
     val fedoraUser = opts.fedoraUsername.get.getOrElse(ask(fedoraUrl.toString, "user name"))
     val fedoraPassword = opts.fedoraPassword.get.getOrElse(askPassword(fedoraUser, fedoraUrl.toString))
     val fedoraCredentials = new FedoraCredentials(fedoraUrl, fedoraUser, fedoraPassword) {
-      override def toString = s"fedora url ${fedoraUrl.toString} user $fedoraUser" // prevents logging a password
+      override def toString = s"fedoraURL=${fedoraUrl.toString}, user=$fedoraUser" // prevents logging a password
     }
 
     // Fill Parameters with values from command line
-    val params = Parameters(opts.streamID(), opts.tag(), !opts.doUpdate(), fedoraCredentials)
+    val params = Parameters(opts.streamID(), opts.tag(), !opts.doUpdate(), fedoraCredentials, opts.inputFile())
 
     log.debug(s"Using the following settings: $params")
 

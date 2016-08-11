@@ -37,16 +37,16 @@ abstract class AbstractFedoraStreamUpdater(timeout: Long = 1000L) extends Stream
     executeRequest(pid, streamId, request)
   }
 
-  def executeRequest(pid: String, streamId: String, request: FedoraRequest[_])
+  def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]): Try[Unit]
 }
 
 class TestStreamUpdater extends AbstractFedoraStreamUpdater {
   def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]) =
-    log.info(s"test-mode: skipping request for $pid/$streamId")
+    Success(log.info(s"test-mode: skipping request for $pid/$streamId"))
 }
 
 class FedoraStreamUpdater(timeout: Long = 1000L) extends AbstractFedoraStreamUpdater {
-  def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]): Try[Unit] = {
+  def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]) = {
     log.info(s"executing request for $pid/$streamId")
     managed(request.execute()).acquireAndGet(_.getStatus match {
       case 200 => log.info(s"saved $pid/$streamId")

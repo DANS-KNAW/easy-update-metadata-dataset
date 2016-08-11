@@ -27,10 +27,13 @@ package object umd {
   case class Parameters(streamID: String,
                         tag: String,
                         test: Boolean,
-                        fedoraCredentials: FedoraCredentials
+                        fedoraCredentials: FedoraCredentials,
+                        input: File
                        ) {
-    //override def toString: String = s"streamID: $streamID, tag: $tag, fedoraCredentials: $fedoraCredentials"
+    override def toString: String = s"streamID=$streamID; tag=$tag; test=$test, input=$input; fedoraCredentials = $fedoraCredentials"
   }
+
+  case class Record(fedoraPid: String, newValue:String)
 
   object Version {
     def apply(): String = {

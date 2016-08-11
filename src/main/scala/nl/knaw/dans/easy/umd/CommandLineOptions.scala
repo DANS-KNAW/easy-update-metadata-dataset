@@ -20,7 +20,6 @@ import java.net.URL
 
 import com.yourmediashelf.fedora.client.FedoraCredentials
 import nl.knaw.dans.easy.umd.CommandLineOptions.log
-import nl.knaw.dans.easy.umd.{Parameters, Version}
 import org.rogach.scallop._
 import org.slf4j.LoggerFactory
 

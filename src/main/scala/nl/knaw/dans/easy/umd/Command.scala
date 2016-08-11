@@ -43,27 +43,34 @@ object Command {
   }
 
   def run(implicit ps: Parameters): Try[Unit] = {
-    log.debug(s"running with $ps")
-
     for {
       list <- parse(ps.input)
-      _ <- Try{list.foreach(update)}
+      _ = log.debug(s"parsed ${list.length} records")
+      updates <- Try{list.foreach(update)}
+    // TODO count/log update failures
     } yield ()
   }
 
-  def update(record: Record) = Try {
+  def update(record: Record)(implicit ps: Parameters) = Try {
     log.info(s"${record.fedoraPid}, ${record.newValue}")
-    //TODO apply transform and update fedora stream
+    for {
+      oldXML <- StreamReader.getXml(record.fedoraPid, ps.streamID)
+      newXML <- Try {transformer(ps.tag, record.newValue).transform(oldXML)}
+      equal = oldXML.toString() == newXML.toString()
+      _ = log.info(s"old ${oldXML.toString().lines.toList.diff(newXML.toString().lines.toList)}")
+      _ = log.info(s"new ${newXML.toString().lines.toList.diff(oldXML.toString().lines.toList)}")
+    // TODO update
+    } yield ()
   }
 
   def parse(file: File): Try[List[Record]] = Try {
     CSVParser
       .parse(file, Charsets.UTF_8, CSVFormat.RFC4180)
       .filter(_.nonEmpty).drop(1)
-      .map(csvRecord => new Record(csvRecord.get(0), csvRecord.get(0))).toList
+      .map(csvRecord => new Record(csvRecord.get(0), csvRecord.get(1))).toList
   }
 
-  def transform(label: String, newValue: String) = {
+  def transformer(label: String, newValue: String) = {
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
         case Elem(prefix, `label`, attribs, scope, children) =>

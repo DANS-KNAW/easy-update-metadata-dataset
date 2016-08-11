@@ -31,6 +31,7 @@ import scala.xml.{Elem, XML}
 trait FedoraStreams {
 
   def updateDatastream(pid: String, streamId: String, content: String): Try[Unit]
+
   def getXml(pid: String, streamId: String): Try[Elem]
 }
 
@@ -44,7 +45,7 @@ abstract class AbstractFedoraFedoraStreams(timeout: Long = 1000L) extends Fedora
 
   def getXml(pid: String, streamId: String): Try[Elem] = Try(
     managed(getDatastreamDissemination(pid, streamId).execute())
-      .acquireAndGet(fr => XML.load(fr.getEntityInputStream))
+      .acquireAndGet(fedoraResponse => XML.load(fedoraResponse.getEntityInputStream))
   )
 
   def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]): Try[Unit]
@@ -58,13 +59,13 @@ class TestFedoraStreams extends AbstractFedoraFedoraStreams {
 class FedoraFedoraStreams(timeout: Long = 1000L) extends AbstractFedoraFedoraStreams {
   def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]) = {
     log.info(s"executing request for $pid/$streamId")
-    managed(request.execute()).acquireAndGet(_.getStatus match {
-      case 200 => log.info(s"saved $pid/$streamId")
-        Success(Unit)
-      case status =>
-        Failure(new IllegalStateException(s"got status $status"))
-    }) // TODO catch and flatmap exception thrown by acquireAndGet or
-    // https://github.com/DANS-KNAW/easy-app/blob/419d5b06f/tool/task-change-set-to-openaccess/src/main/scala/nl/knaw/dans/easy/task/StreamUpdater.scala#L21-L35
+    managed(request.execute())
+      .acquireAndGet(_.getStatus match {
+        case 200 => log.info(s"saved $pid/$streamId")
+          Success(Unit)
+        case status =>
+          Failure(new IllegalStateException(s"got status $status"))
+      })
   }
 }
 

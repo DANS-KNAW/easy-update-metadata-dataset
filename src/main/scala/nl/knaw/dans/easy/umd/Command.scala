@@ -52,13 +52,13 @@ object Command {
     } yield failures
   }
 
-  def reportError(tuple: (Record, Try[Unit])): Any = {
+  def reportError(tuple: (InputRecord, Try[Unit])): Any = {
     val (record, result) = tuple
     val throwable = result.failed.get
     log.error(s"failed to process ${record.fedoraPid} ${record.newValue}", throwable)
   }
 
-  def update(record: Record)(implicit ps: Parameters): Try[Unit] = {
+  def update(record: InputRecord)(implicit ps: Parameters): Try[Unit] = {
     log.info(s"${record.fedoraPid}, ${record.newValue}")
     for {
       oldXML <- FedoraStreams().getXml(record.fedoraPid, ps.streamID)
@@ -71,11 +71,10 @@ object Command {
     } yield ()
   }
 
-  def parse(file: File): Try[List[Record]] = Try {
+  def parse(file: File): Try[List[InputRecord]] = Try {
     CSVParser
       .parse(file, Charsets.UTF_8, CSVFormat.RFC4180)
-      .filter(_.nonEmpty).drop(1)
-      .map(csvRecord => new Record(csvRecord.get(0), csvRecord.get(1))).toList
+      .filter(_.nonEmpty).drop(1).toList.map(rec => InputRecord(rec))
   }
 
   def transformer(label: String, newValue: String) = {

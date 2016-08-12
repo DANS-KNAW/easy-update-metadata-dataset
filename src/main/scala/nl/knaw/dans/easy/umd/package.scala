@@ -31,8 +31,6 @@ package object umd {
     override def toString: String = s"streamID=$streamID; tag=$tag; test=$test, input=$input; fedoraCredentials = $fedoraCredentials"
   }
 
-  case class Record(fedoraPid: String, newValue:String)
-
   object Version {
     def apply(): String = {
       val props = new Properties()

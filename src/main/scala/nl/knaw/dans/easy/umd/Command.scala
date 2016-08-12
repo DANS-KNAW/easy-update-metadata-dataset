@@ -15,16 +15,12 @@
  */
 package nl.knaw.dans.easy.umd
 
-import java.io.File
-
 import com.yourmediashelf.fedora.client.FedoraClient
 import com.yourmediashelf.fedora.client.request.FedoraRequest
+import nl.knaw.dans.easy.umd.InputRecord.parse
 import nl.knaw.dans.easy.umd.{CommandLineOptions => cmd}
-import org.apache.commons.csv.{CSVFormat, CSVParser}
-import org.apache.commons.io.Charsets
 import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConversions.iterableAsScalaIterable
 import scala.util.{Failure, Success, Try}
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 import scala.xml.{Elem, Node, Text}
@@ -69,12 +65,6 @@ object Command {
       _ = log.info(s"new ${ps.streamID} ${newLines.diff(oldLines)}")
       _ <- if (oldXML != newXML) FedoraStreams().updateDatastream(record.fedoraPid, ps.streamID, newXML.toString()) else Success(())
     } yield ()
-  }
-
-  def parse(file: File): Try[List[InputRecord]] = Try {
-    CSVParser
-      .parse(file, Charsets.UTF_8, CSVFormat.RFC4180)
-      .filter(_.nonEmpty).drop(1).toList.map(rec => InputRecord(rec))
   }
 
   def transformer(label: String, newValue: String) = {

@@ -14,6 +14,16 @@ DESCRIPTION
 
 Batch-updates metadata streams of datasets in a Fedora Commons repository
 
+It is the responsibility of the caller to
+* Provide a _valid_ new value in the input file
+* Change DC and EMD alike
+* If applicable update file rights along with dataset rights and call [easy-update-fs-rdb]
+* If applicable update relations such as hasDoi and isMemberOf
+* Subsequently call [easy-task-add-new-license] [easy-update-solr-index]
+
+[easy-update-fs-rdb]: https://github.com/DANS-KNAW/easy-update-fs-rdb
+[easy-task-add-new-license]: https://github.com/DANS-KNAW/easy-app/blob/c28b3e6556cea014650f8a9fdeacbbc2a6df23fc/tool/task-add-new-license/README.md
+[easy-update-solr-index]: https://github.com/DANS-KNAW/easy-update-solr-index
 
 ARGUMENTS
 ---------

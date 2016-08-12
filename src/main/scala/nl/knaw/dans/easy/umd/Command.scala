@@ -43,15 +43,9 @@ object Command {
     for {
       list <- parse(ps.input)
       _ = log.info(s"parsed ${list.length} records")
-      failures = list.map(record => (record, update(record))).filter(_._2.isFailure).map(reportError)
+      failures = list.map(update).filter(_.isFailure)
       _ = log.info(s"processed ${list.length} records with ${failures.length} failures")
     } yield failures
-  }
-
-  def reportError(tuple: (InputRecord, Try[Unit])): Any = {
-    val (record, result) = tuple
-    val throwable = result.failed.get
-    log.error(s"failed to process ${record.fedoraPid} ${record.newValue}", throwable)
   }
 
   def update(record: InputRecord)(implicit ps: Parameters): Try[Unit] = {
@@ -65,6 +59,9 @@ object Command {
       _ = log.info(s"new ${ps.streamID} ${newLines.diff(oldLines)}")
       _ <- if (oldXML != newXML) FedoraStreams().updateDatastream(record.fedoraPid, ps.streamID, newXML.toString()) else Success(())
     } yield ()
+  }.recoverWith{ case e =>
+      log.error(s"failed to process ${record.fedoraPid} ${record.newValue}", e)
+      Failure(e)
   }
 
   def transformer(label: String, newValue: String) = {

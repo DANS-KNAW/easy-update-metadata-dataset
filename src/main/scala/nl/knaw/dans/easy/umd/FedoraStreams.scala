@@ -15,12 +15,8 @@
  */
 package nl.knaw.dans.easy.umd
 
-import java.io.InputStream
-
 import com.yourmediashelf.fedora.client.FedoraClient
-import com.yourmediashelf.fedora.client.FedoraClient._
 import com.yourmediashelf.fedora.client.request.FedoraRequest
-import com.yourmediashelf.fedora.client.response.FedoraResponse
 import nl.knaw.dans.easy.umd.FedoraStreams.log
 import org.slf4j.LoggerFactory
 import resource._
@@ -44,20 +40,20 @@ abstract class AbstractFedoraFedoraStreams(timeout: Long = 1000L) extends Fedora
   }
 
   def getXml(pid: String, streamId: String): Try[Elem] = Try(
-    managed(getDatastreamDissemination(pid, streamId).execute())
+    managed(FedoraClient.getDatastreamDissemination(pid, streamId).execute())
       .acquireAndGet(fedoraResponse => XML.load(fedoraResponse.getEntityInputStream))
   )
 
-  def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]): Try[Unit]
+  def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]): Try[Unit]
 }
 
 class TestFedoraStreams extends AbstractFedoraFedoraStreams {
-  def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]) =
+  def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]) =
     Success(log.info(s"test-mode: skipping request for $pid/$streamId"))
 }
 
 class FedoraFedoraStreams(timeout: Long = 1000L) extends AbstractFedoraFedoraStreams {
-  def executeRequest(pid: String, streamId: String, request: FedoraRequest[_]) = {
+  def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]) = {
     log.info(s"executing request for $pid/$streamId")
     managed(request.execute())
       .acquireAndGet(_.getStatus match {

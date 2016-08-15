@@ -33,31 +33,29 @@ object Command {
     val ps = cmd.parse(args)
     FedoraRequest.setDefaultClient(new FedoraClient(ps.fedoraCredentials))
     run(ps) match {
-      case s: Success[List[Any]] if s.get.nonEmpty => () // logged by run
-      case f: Failure[_] => log.error(s"failed", f.exception)
-      case s: Success[_] => log.info("success")
+      case Success(()) => log.info("success")
+      case Failure(e) => log.error("failed", e)
     }
   }
 
-  def run(implicit ps: Parameters): Try[List[Any]] = {
+  def run(implicit ps: Parameters): Try[Unit] = {
     for {
-      list <- parse(ps.input)
-      _ = log.info(s"parsed ${list.length} records")
-      failures = list.map(update).filter(_.isFailure)
-      _ = log.info(s"processed ${list.length} records with ${failures.length} failures")
-    } yield failures
+      records <- parse(ps.input)
+      firstFailure <- records.map(update).find(_.isFailure).getOrElse(Success(())) // fail fast, if an error occurs, stop updating the rest of the stream!
+    } yield firstFailure
   }
 
   def update(record: InputRecord)(implicit ps: Parameters): Try[Unit] = {
     log.info(s"${record.fedoraPid}, ${record.newValue}")
+    val fedora = FedoraStreams()
     for {
-      oldXML <- FedoraStreams().getXml(record.fedoraPid, ps.streamID)
+      oldXML <- fedora.getXml(record.fedoraPid, ps.streamID)
       newXML = transformer(ps.tag, record.newValue).transform(oldXML)
       oldLines = oldXML.toString().lines.toList
       newLines = newXML.toString().lines.toList
       _ = log.info(s"old ${ps.streamID} ${oldLines.diff(newLines)}")
       _ = log.info(s"new ${ps.streamID} ${newLines.diff(oldLines)}")
-      _ <- if (oldXML != newXML) FedoraStreams().updateDatastream(record.fedoraPid, ps.streamID, newXML.toString()) else Success(())
+      _ <- if (oldXML != newXML) fedora.updateDatastream(record.fedoraPid, ps.streamID, newXML.toString()) else Success(())
     } yield ()
   }.recoverWith{ case e =>
       log.error(s"failed to process ${record.fedoraPid} ${record.newValue}", e)
@@ -67,7 +65,7 @@ object Command {
   def transformer(label: String, newValue: String) = {
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
-        case Elem(prefix, `label`, attribs, scope, children) =>
+        case Elem(prefix, `label`, attribs, scope, _) =>
           Elem(prefix, label, attribs, scope, false, Text(newValue))
         case other => other
       }

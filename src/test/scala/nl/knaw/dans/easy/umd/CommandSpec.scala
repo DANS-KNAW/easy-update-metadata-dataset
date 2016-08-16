@@ -34,19 +34,19 @@ class CommandSpec extends FlatSpec with Matchers {
     val s = s"-s EMD -t accessRights $credentials $input"
     val ps = CommandLineOptions.parse(s.split(" "))
     FedoraRequest.setDefaultClient(new FedoraClient(ps.fedoraCredentials))
-    Command.run(CommandLineOptions.parse(s.split(" "))).get.length shouldBe 0
+    Command.run(CommandLineOptions.parse(s.split(" "))) shouldBe a[Success[_]]
   }
 
   it should "have no failures for DC" in {
     assume(canConnect(Array(url)))
     val s = s"-s DC -t rights $credentials $input"
-    Command.run(CommandLineOptions.parse(s.split(" "))).get.length shouldBe 0
+    Command.run(CommandLineOptions.parse(s.split(" "))) shouldBe a[Success[_]]
   }
 
   it should "have a failure for BLABLA" in {
     assume(canConnect(Array(url)))
     val s = s"-s BLABLA -t xyz $credentials $input"
-    Command.run(CommandLineOptions.parse(s.split(" "))).get.length shouldBe 1
+    Command.run(CommandLineOptions.parse(s.split(" "))) shouldBe a[Failure[_]]
   }
 
   def canConnect(urls: Array[String]): Boolean = Try {

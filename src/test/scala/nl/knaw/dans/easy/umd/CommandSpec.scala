@@ -46,7 +46,9 @@ class CommandSpec extends FlatSpec with Matchers {
   it should "have a failure for BLABLA" in {
     assume(canConnect(Array(url)))
     val s = s"-s BLABLA -t xyz $credentials $input"
-    Command.run(CommandLineOptions.parse(s.split(" "))) shouldBe a[Failure[_]]
+    the[Exception] thrownBy
+      Command.run(CommandLineOptions.parse(s.split(" "))).get should
+      have message "failed to process: easy-dataset:2,OPEN_ACCESS"
   }
 
   def canConnect(urls: Array[String]): Boolean = Try {

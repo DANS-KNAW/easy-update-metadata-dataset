@@ -20,7 +20,7 @@ import java.io.{ByteArrayOutputStream, File}
 import nl.knaw.dans.easy.umd.CustomMatchers._
 import org.scalatest.{FlatSpec, Matchers}
 
-class ComandLineOptionsSpec extends FlatSpec with Matchers {
+class CommandLineOptionsSpec extends FlatSpec with Matchers {
 
   def helpInfo = {
     val mockedStdOut = new ByteArrayOutputStream()

@@ -31,9 +31,9 @@ object InputRecord {
   def parse(file: File): Try[Stream[InputRecord]] = Try {
     CSVParser.parse(file, Charsets.UTF_8, CSVFormat.RFC4180)
       .asScala
-      .filter(_.asScala.nonEmpty)
-      .drop(1)
+      .drop(1) // Ingore the header
       .toStream
+      .withFilter(_.asScala.size > 1) // Ignore empty or incomplete lines
       .map(InputRecord(_))
   }
 }

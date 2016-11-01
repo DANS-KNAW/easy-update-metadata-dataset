@@ -45,18 +45,6 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
        |Options:
        |""".stripMargin)
 
-  private val shouldBeFile = singleArgConverter(value =>
-    new File(value) match {
-      case f if f.isFile => f
-      case _ => throw createExecption(s"'$value' is not a file")
-    }
-  )
-  private val shouldBeDir = singleArgConverter(value =>
-    new File(value) match {
-      case f if f.isDirectory => f
-      case _ => throw createExecption(s"'$value' is not a directory")
-    }
-  )
   private val shouldBeUrl = singleArgConverter(value =>
     Try {
       new URL(value)
@@ -76,8 +64,10 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
     descr = "Without this argument no changes are made to the repository, the default is a test mode that logs the intended changes",
     default = Some(false))
 
-  val streamID = opt[String](name = "stream-id", short = 's', required = true, descr = "id of fedoara stream to update")
-  val tag = opt[String](name = "tag", short = 't', required = true, descr = "xml tag to change")
+  val streamID = opt[String](name = "stream-id", short = 's', required = true,
+    descr = "id of fedoara stream to update")
+  val tag = opt[String](name = "tag", short = 't', required = true,
+    descr = "xml tag to change")
 
   val fedoraUrl = opt[String](name = "fedora-url", short = 'f',
     descr = "Base url for the fedora repository",
@@ -87,7 +77,14 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
   val fedoraPassword = opt[String](name = "fedora-password", noshort = true,
     descr = "Password for fedora repository, if omitted provide it on stdin")
 
-  val inputFile = trailArg[File](name = "input-file", required = true, descr = "The CSV file with required changes. Columns: fedoraID, newValue. First line is assumed to be a header.")(shouldBeFile)
+  val inputFile = trailArg[File](name = "input-file", required = true,
+    descr = "The CSV file with required changes. Columns: fedoraID, newValue. First line is assumed to be a header.")
+
+  validateFileExists(inputFile)
+  validate(inputFile)(f => {
+    if (f.isFile) Right(())
+    else Left(s"'$f' is not a file")
+  })
 
   footer("")
   verify()
@@ -103,8 +100,8 @@ object CommandLineOptions {
 
     val fedoraUrl = new URL(opts.fedoraUrl())
 
-    val fedoraUser = opts.fedoraUsername.get.getOrElse(ask(fedoraUrl.toString, "user name"))
-    val fedoraPassword = opts.fedoraPassword.get.getOrElse(askPassword(fedoraUser, fedoraUrl.toString))
+    val fedoraUser = opts.fedoraUsername.toOption.getOrElse(ask(fedoraUrl.toString, "user name"))
+    val fedoraPassword = opts.fedoraPassword.toOption.getOrElse(askPassword(fedoraUser, fedoraUrl.toString))
     val fedoraCredentials = new FedoraCredentials(fedoraUrl, fedoraUser, fedoraPassword) {
       override def toString = s"fedoraURL=${fedoraUrl.toString}, user=$fedoraUser" // prevents logging a password
     }

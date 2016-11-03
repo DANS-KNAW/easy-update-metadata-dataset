@@ -45,21 +45,6 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
        |Options:
        |""".stripMargin)
 
-  private val shouldBeUrl = singleArgConverter(value =>
-    Try {
-      new URL(value)
-    } match {
-      case Success(url) => value
-      case Failure(e) => throw createExecption(s"'$value' is not a valid url: ${e.getMessage}")
-    }
-  )
-
-  private def createExecption(msg: String) = {
-    log.error(msg)
-    new IllegalArgumentException(msg)
-  }
-
-
   val doUpdate = opt[Boolean](name = "doUpdate", noshort = true,
     descr = "Without this argument no changes are made to the repository, the default is a test mode that logs the intended changes",
     default = Some(false))
@@ -69,9 +54,9 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
   val tag = opt[String](name = "tag", short = 't', required = true,
     descr = "xml tag to change")
 
-  val fedoraUrl = opt[String](name = "fedora-url", short = 'f',
+  val fedoraUrl = opt[URL](name = "fedora-url", short = 'f',
     descr = "Base url for the fedora repository",
-    default = Some("http://localhost:8080/fedora"))(shouldBeUrl)
+    default = Some(new URL("http://localhost:8080/fedora")))
   val fedoraUsername = opt[String](name = "fedora-username", noshort = true,
     descr = "Username for fedora repository, if omitted provide it on stdin")
   val fedoraPassword = opt[String](name = "fedora-password", noshort = true,
@@ -81,10 +66,7 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
     descr = "The CSV file with required changes. Columns: fedoraID, newValue. First line is assumed to be a header.")
 
   validateFileExists(inputFile)
-  validate(inputFile)(f => {
-    if (f.isFile) Right(())
-    else Left(s"'$f' is not a file")
-  })
+  validateFileIsFile(inputFile)
 
   footer("")
   verify()
@@ -98,8 +80,7 @@ object CommandLineOptions {
     log.debug("Parsing command line ...")
     val opts = new CommandLineOptions(args)
 
-    val fedoraUrl = new URL(opts.fedoraUrl())
-
+    val fedoraUrl = opts.fedoraUrl()
     val fedoraUser = opts.fedoraUsername.toOption.getOrElse(ask(fedoraUrl.toString, "user name"))
     val fedoraPassword = opts.fedoraPassword.toOption.getOrElse(askPassword(fedoraUser, fedoraUrl.toString))
     val fedoraCredentials = new FedoraCredentials(fedoraUrl, fedoraUser, fedoraPassword) {

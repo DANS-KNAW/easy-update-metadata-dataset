@@ -16,7 +16,7 @@ Batch-updates metadata streams of datasets in a Fedora Commons repository.
 
 Details for `-s AMD --tag datasetState` (which requires a change history) are documented with [tests],
 note that some legitimate preconditions are not implemented and cause a failure,
-illigimate preconditions might pass without a warning, please review the logged changes.
+not expected preconditions might pass without a warning, please review the logged changes.
 
 **WARNING**: It is the responsibility of the caller to
 

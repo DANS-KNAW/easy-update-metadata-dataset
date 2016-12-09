@@ -12,17 +12,18 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-Batch-updates metadata streams of datasets in a Fedora Commons repository
+Batch-updates metadata streams of datasets in a Fedora Commons repository.
 
-Special cases like `--stream-id AMD --tag datasetState` (which requires a change history) are documented with [tests],
-note some report a failure.
+Details for `-s AMD --tag datasetState` (which requires a change history) are documented with [tests],
+note that some legitimate preconditions are not implemented and cause a failure,
+illigimate preconditions might pass without a warning, please review the logged changes.
 
 **WARNING**: It is the responsibility of the caller to
 
 * Provide a _valid_ new value in the input file.
 * Change `DC` and `EMD` alike as far as applicable.
-* In case of `--tag 'accessRights'` (for both `EMD` and `AMD`) also
-  * Update [file rights] along with dataset rights.
+* In case of `-s EMD -tag 'accessRights'` / `-s DC --tag rights` also
+  * Update [file rights] along.
   * Call [easy-update-fs-rdb].
   * Reboot the web-ui to clear the [hibernate] cash.
 * When EMD and/or file rights are changed, call [easy-task-add-new-license], this link requires access to the legacy code base.

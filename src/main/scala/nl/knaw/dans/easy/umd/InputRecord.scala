@@ -23,17 +23,17 @@ import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 
 import scala.util.Try
 
-case class InputRecord(fedoraPid: String, newValue:String)
+case class InputRecord(fedoraPid: String, newValue:String, oldValue:String)
 
 object InputRecord {
-  def apply(csvRecord: CSVRecord) = new InputRecord(csvRecord.get(0), csvRecord.get(1))
+  def apply(csvRecord: CSVRecord) = new InputRecord(csvRecord.get(0), csvRecord.get(1), csvRecord.get(2))
 
   def parse(file: File): Try[Stream[InputRecord]] = Try {
     CSVParser.parse(file, Charsets.UTF_8, CSVFormat.RFC4180)
       .asScala
       .drop(1) // Ingore the header
       .toStream
-      .withFilter(_.asScala.size > 1) // Ignore empty or incomplete lines
+      .withFilter(_.asScala.size > 2) // Ignore empty or incomplete lines
       .map(InputRecord(_))
   }
 }

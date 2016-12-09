@@ -60,7 +60,7 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
     descr = "Password for fedora repository, if omitted provide it on stdin")
 
   val inputFile: ScallopOption[File] = trailArg[File](name = "input-file", required = true,
-    descr = "The CSV file with required changes. Columns: fedoraID, newValue. First line is assumed to be a header.")
+    descr = "The CSV file with required changes. Columns: fedoraID, newValue, oldValue. First line is assumed to be a header. Additional columns are ignored. Lines with less columns are ignored without any warning.")
 
   validateFileExists(inputFile)
   validateFileIsFile(inputFile)

@@ -51,8 +51,9 @@ ARGUMENTS
          --version                  Show version of this program
     
     trailing arguments:
-     input-file (required)   The CSV file with required changes. Columns: fedoraID, newValue. First line is
-                             assumed to be a header.
+     input-file (required)   The CSV file with required changes. Columns: fedoraID, newValue, oldValue. First
+                             line is assumed to be a header. Additional columns are ignored. Lines with less
+                             columns are ignored without any warning.
 
 
 INSTALLATION AND CONFIGURATION

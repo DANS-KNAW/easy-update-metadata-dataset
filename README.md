@@ -24,8 +24,8 @@ note some report a failure.
 * In case of `--tag 'accessRights'` (for both `EMD` and `AMD`) also
   * Update [file rights] along with dataset rights.
   * Call [easy-update-fs-rdb].
-  * Call [easy-task-add-new-license], this link requires access to the legacy code base,
   * Reboot the web-ui to clear the [hibernate] cash.
+* When EMD and/or file rights are changed, call [easy-task-add-new-license], this link requires access to the legacy code base.
 * If applicable update relations such as hasDoi and isMemberOf.
 * Call [easy-update-solr-index] if necessary.
 

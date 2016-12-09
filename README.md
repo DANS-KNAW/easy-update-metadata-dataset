@@ -6,7 +6,7 @@ easy-update-metadata-dataset
 SYNOPSIS
 --------
 
-    easy-update-metadata-dataset --stream-id [EMD|DC|...] --tag [accessRights|rights|...] <datasets.csv>
+    easy-update-metadata-dataset --stream-id [EMD|DC|AMD|...] --tag [accessRights|datasetState|...] <datasets.csv>
 
 
 DESCRIPTION
@@ -14,17 +14,27 @@ DESCRIPTION
 
 Batch-updates metadata streams of datasets in a Fedora Commons repository
 
-It is the responsibility of the caller to
+Special cases like `--stream-id AMD --tag datasetState` (which requires a change history) are documented with [tests],
+note some report a failure.
 
-* Provide a _valid_ new value in the input file
-* Change DC and EMD alike
-* If applicable update file rights along with dataset rights and call [easy-update-fs-rdb]
-* If applicable update relations such as hasDoi and isMemberOf
-* Subsequently call [easy-task-add-new-license] and/or [easy-update-solr-index] if necessary
+**WARNING**: It is the responsibility of the caller to
+
+* Provide a _valid_ new value in the input file.
+* Change `DC` and `EMD` alike as far as applicable.
+* In case of `--tag 'accessRights'` (for both `EMD` and `AMD`) also
+  * Update [file rights] along with dataset rights.
+  * Call [easy-update-fs-rdb].
+  * Call [easy-task-add-new-license], this link requires access to the legacy code base,
+  * Reboot the web-ui to clear the [hibernate] cash.
+* If applicable update relations such as hasDoi and isMemberOf.
+* Call [easy-update-solr-index] if necessary.
 
 [easy-update-fs-rdb]: https://github.com/DANS-KNAW/easy-update-fs-rdb
-[easy-task-add-new-license]: https://github.com/DANS-KNAW/easy-app/blob/c28b3e6556cea014650f8a9fdeacbbc2a6df23fc/tool/task-add-new-license/README.md
+[file rights]: https://github.com/DANS-KNAW/easy-update-metadata-fileitem
+[hibernate]: http://hibernate.org/
+[easy-task-add-new-license]: https://github.com/DANS-KNAW/easy-app/blob/master/tool/task-add-new-license/README.md
 [easy-update-solr-index]: https://github.com/DANS-KNAW/easy-update-solr-index
+[tests]: nl.knaw.dans.easy.umd.TransformerSpec
 
 
 ARGUMENTS

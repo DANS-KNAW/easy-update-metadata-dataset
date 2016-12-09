@@ -22,7 +22,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class CommandLineOptionsSpec extends FlatSpec with Matchers {
 
-  def helpInfo = {
+  def helpInfo: String = {
     val mockedStdOut = new ByteArrayOutputStream()
     Console.withOut(mockedStdOut) {
       new CommandLineOptions().printHelp()

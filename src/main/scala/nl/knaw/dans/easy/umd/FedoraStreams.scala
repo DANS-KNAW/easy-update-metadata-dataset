@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.umd
 import com.yourmediashelf.fedora.client.FedoraClient
 import com.yourmediashelf.fedora.client.request.FedoraRequest
 import nl.knaw.dans.easy.umd.FedoraStreams.log
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import resource._
 
 import scala.util.{Failure, Success, Try}
@@ -33,7 +33,7 @@ trait FedoraStreams {
 
 abstract class AbstractFedoraFedoraStreams(timeout: Long = 1000L) extends FedoraStreams {
 
-  def updateDatastream(pid: String, streamId: String, content: String) = {
+  def updateDatastream(pid: String, streamId: String, content: String): Try[Unit] = {
     log.info(s"updating $pid/$streamId")
     val request = FedoraClient.modifyDatastream(pid, streamId).content(content)
     executeRequest(pid, streamId, request)
@@ -53,7 +53,7 @@ class TestFedoraStreams extends AbstractFedoraFedoraStreams {
 }
 
 class FedoraFedoraStreams(timeout: Long = 1000L) extends AbstractFedoraFedoraStreams {
-  def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]) = {
+  def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]): Try[Unit] = {
     log.info(s"executing request for $pid/$streamId")
     managed(request.execute())
       .acquireAndGet(_.getStatus match {
@@ -67,7 +67,7 @@ class FedoraFedoraStreams(timeout: Long = 1000L) extends AbstractFedoraFedoraStr
 
 object FedoraStreams {
 
-  val log = LoggerFactory.getLogger(getClass)
+  val log: Logger = LoggerFactory.getLogger(getClass)
 
   def apply(timeout: Long = 1000L)(implicit parameters: Parameters): FedoraStreams =
     if (parameters.test) new TestFedoraStreams

@@ -19,11 +19,8 @@ import java.io.File
 import java.net.URL
 
 import com.yourmediashelf.fedora.client.FedoraCredentials
-import nl.knaw.dans.easy.umd.CommandLineOptions.log
 import org.rogach.scallop._
-import org.slf4j.LoggerFactory
-
-import scala.util.{Failure, Success, Try}
+import org.slf4j.{Logger, LoggerFactory}
 
 class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/resources/deasy-input.csv".split(" ")) extends ScallopConf(args) {
 
@@ -31,7 +28,7 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
   editBuilder(_.setHelpWidth(110))
 
   printedName = "easy-update-metadata-dataset"
-  val _________ = " " * printedName.length
+  val _________ : String = " " * printedName.length
 
   version(s"$printedName v${Version()}")
   banner(
@@ -40,29 +37,29 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
        |
        |Usage:
        |
-       |$printedName --stream-id [EMD|DC|...] --tag [accessRights|rights|...] <datasets.csv>
+       |$printedName --stream-id [EMD|DC|AMD|...] --tag [accessRights|datasetState|...] <datasets.csv>
        |
        |Options:
        |""".stripMargin)
 
-  val doUpdate = opt[Boolean](name = "doUpdate", noshort = true,
+  val doUpdate: ScallopOption[Boolean] = opt[Boolean](name = "doUpdate", noshort = true,
     descr = "Without this argument no changes are made to the repository, the default is a test mode that logs the intended changes",
     default = Some(false))
 
-  val streamID = opt[String](name = "stream-id", short = 's', required = true,
+  val streamID: ScallopOption[String] = opt[String](name = "stream-id", short = 's', required = true,
     descr = "id of fedoara stream to update")
-  val tag = opt[String](name = "tag", short = 't', required = true,
+  val tag: ScallopOption[String] = opt[String](name = "tag", short = 't', required = true,
     descr = "xml tag to change")
 
-  val fedoraUrl = opt[URL](name = "fedora-url", short = 'f',
+  val fedoraUrl: ScallopOption[URL] = opt[URL](name = "fedora-url", short = 'f',
     descr = "Base url for the fedora repository",
     default = Some(new URL("http://localhost:8080/fedora")))
-  val fedoraUsername = opt[String](name = "fedora-username", noshort = true,
+  val fedoraUsername: ScallopOption[String] = opt[String](name = "fedora-username", noshort = true,
     descr = "Username for fedora repository, if omitted provide it on stdin")
-  val fedoraPassword = opt[String](name = "fedora-password", noshort = true,
+  val fedoraPassword: ScallopOption[String] = opt[String](name = "fedora-password", noshort = true,
     descr = "Password for fedora repository, if omitted provide it on stdin")
 
-  val inputFile = trailArg[File](name = "input-file", required = true,
+  val inputFile: ScallopOption[File] = trailArg[File](name = "input-file", required = true,
     descr = "The CSV file with required changes. Columns: fedoraID, newValue. First line is assumed to be a header.")
 
   validateFileExists(inputFile)
@@ -74,7 +71,7 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
 
 object CommandLineOptions {
 
-  val log = LoggerFactory.getLogger(getClass)
+  val log: Logger = LoggerFactory.getLogger(getClass)
 
   def parse(args: Array[String]): Parameters = {
     log.debug("Parsing command line ...")

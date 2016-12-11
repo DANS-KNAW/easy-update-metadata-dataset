@@ -15,13 +15,14 @@
  */
 package nl.knaw.dans.easy.umd
 
-import org.joda.time.{DateTime, DateTimeUtils}
+import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.xml.PrettyPrinter
 
 class TransformerSpec extends FlatSpec with Matchers {
 
+  DateTimeZone.setDefault(DateTimeZone.forOffsetHours(1))
   DateTimeUtils.setCurrentMillisFixed(new DateTime("2016-12-09T13:52:51.089+01:00").getMillis)
 
   "a plain transformation" should "replace all occurrences of a tag" in {

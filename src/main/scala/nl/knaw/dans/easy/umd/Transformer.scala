@@ -24,24 +24,30 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 object Transformer {
 
-  def apply(streamID: String, tag: String, oldXML: Elem, newValue: String): Try[RuleTransformer] = {
+  def apply(streamID: String, tag: String, oldValue: String, newValue: String): RuleTransformer = {
 
-    lazy val previousState = (oldXML \ "previousState").text
-    (streamID, tag, previousState) match {
-      case ("AMD", "datasetState", "") =>
-        Failure(new NotImplementedException("no <previousState> available while trying to change <datasetState>."))
-      case ("AMD", "datasetState", _) =>
-        Success(datasetStateTransformer((oldXML \ "datasetState").text, newValue))
+    (streamID, tag) match {
+      case ("AMD", "datasetState") =>
+        datasetStateTransformer(oldValue, newValue)
       case _ =>
-        Success(plainTransformer(tag, newValue))
+        plainTransformer(tag, oldValue, newValue)
     }
   }
 
-  private def plainTransformer(label: String, newValue: String): RuleTransformer =
+  def validate(streamID: String, tag: String, oldXML: Elem): Try[Unit] = {
+    (streamID, tag, (oldXML \ "previousState").text) match {
+      case ("AMD", "datasetState", "") =>
+        Failure(new NotImplementedException("no <previousState> available while trying to change AMD <datasetState>."))
+      case _ =>
+        Success(Unit)
+    }
+  }
+
+  private def plainTransformer(label: String, oldValue: String, newValue: String): RuleTransformer =
 
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
-        case Elem(prefix, `label`, attribs, scope, _) =>
+        case Elem(prefix, `label`, attribs, scope, _) if n.text == oldValue =>
           Elem(prefix, label, attribs, scope, false, Text(newValue))
         case other =>
           other
@@ -49,7 +55,6 @@ object Transformer {
     })
 
   private def datasetStateTransformer(oldState: String, newState: String): RuleTransformer = {
-
 
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {

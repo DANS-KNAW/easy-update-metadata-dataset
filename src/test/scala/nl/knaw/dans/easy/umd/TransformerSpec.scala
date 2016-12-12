@@ -28,10 +28,10 @@ class TransformerSpec extends FlatSpec with Matchers {
   "a plain transformation" should "replace all occurrences of a tag" in {
 
     val inputXML = <someroot><sometag>first value</sometag><sometag>second value</sometag></someroot>
-    val expectedXML = <someroot><sometag>new value</sometag><sometag>new value</sometag></someroot>
+    val expectedXML = <someroot><sometag>new value</sometag><sometag>second value</sometag></someroot>
     new PrettyPrinter(160, 2).format(
-      Transformer("SOMESTREAMID", "sometag", inputXML, "new value")
-        .get.transform(inputXML).head
+      Transformer("SOMESTREAMID", "sometag", "first value", "new value")
+        .transform(inputXML).head
     ) shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
 
@@ -83,8 +83,8 @@ class TransformerSpec extends FlatSpec with Matchers {
       </damd:administrative-md>
 
     new PrettyPrinter(160, 2).format(
-      Transformer("AMD", "datasetState", inputXML, "PUBLISHED")
-        .get.transform(inputXML).head
+      Transformer("AMD", "datasetState", "SUBMITTED", "PUBLISHED")
+        .transform(inputXML).head
     ) shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
 
@@ -123,7 +123,7 @@ class TransformerSpec extends FlatSpec with Matchers {
         </damd:workflowData>
       </damd:administrative-md>
 
-    Transformer("AMD", "datasetState", inputXML, "SUBMITTED")
+    Transformer.validate("AMD", "datasetState", inputXML)
       .failed.get.getMessage should include("previousState")
   }
 }

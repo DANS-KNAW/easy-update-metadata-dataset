@@ -47,7 +47,8 @@ object Command {
     val fedora = FedoraStreams()
     for {
       oldXML <- fedora.getXml(record.fedoraPid, ps.streamID)
-      transformer <- Transformer(ps.streamID, ps.tag, oldXML, record.newValue)
+      _ <- Transformer.validate(ps.streamID, ps.tag, oldXML)
+      transformer = Transformer(ps.streamID, ps.tag, record.oldValue, record.newValue)
       newXML = transformer.transform(oldXML)
       oldLines = new PrettyPrinter(160, 2).format(oldXML).lines.toList
       newLines = new PrettyPrinter(160, 2).format(newXML.head).lines.toList

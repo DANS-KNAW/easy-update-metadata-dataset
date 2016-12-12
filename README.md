@@ -53,8 +53,8 @@ ARGUMENTS
     
     trailing arguments:
      input-file (required)   The CSV file with required changes. Columns: fedoraID, newValue, oldValue. First
-                             line is assumed to be a header. Additional columns are ignored. Lines with less
-                             columns are ignored without any warning.
+                             line is assumed to be a header. Additional columns aand lines with less columns are
+                             ignored as comment.
 
 
 INSTALLATION AND CONFIGURATION

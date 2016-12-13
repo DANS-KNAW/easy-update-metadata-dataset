@@ -6,7 +6,7 @@ easy-update-metadata-dataset
 SYNOPSIS
 --------
 
-    easy-update-metadata-dataset --stream-id [EMD|DC|AMD|...] --tag [accessRights|datasetState|...] <datasets.csv>
+    easy-update-metadata-dataset --stream-id [EMD|DC|AMD|...] --tag [accessRights|rights|datasetState|...] <datasets.csv>
 
 
 DESCRIPTION
@@ -16,11 +16,12 @@ Batch-updates metadata streams of datasets in a Fedora Commons repository.
 
 Details for `-s AMD --tag datasetState` (which requires a change history) are documented with [tests],
 note that some legitimate preconditions are not implemented and cause a failure,
-not expected preconditions might pass without a warning, please review the logged changes.
+not expected preconditions might pass without a warning.
 
 **WARNING**: It is the responsibility of the caller to
 
 * Provide a _valid_ new value in the input file.
+* Run with a representative sample in test mode and review the logged changes.
 * Change `DC` and `EMD` alike as far as applicable.
 * In case of `-s EMD -tag 'accessRights'` / `-s DC --tag rights` also
   * Update [file rights] along.

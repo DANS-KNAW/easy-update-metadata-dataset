@@ -30,21 +30,23 @@ object Command {
   def main(args: Array[String]): Unit = {
     log.debug("Starting command line interface")
     val ps = cmd.parse(args)
-    FedoraRequest.setDefaultClient(new FedoraClient(ps.fedoraCredentials))
     run(ps) match {
       case Success((count)) => log.info(s"Changed $count ${ps.streamID} streams.")
       case Failure(e) => log.error("failed", e)
     }
   }
 
-  def run(implicit ps: Parameters): Try[Unit] = for {
-    records <- parse(ps.input)
-    _ <- records.map(update).find(_.isFailure).getOrElse(Success(())) // fail fast, if an error occurs, stop updating the rest of the stream!
-  } yield records.size
+  def run(implicit ps: Parameters): Try[Unit] = {
+    FedoraRequest.setDefaultClient(new FedoraClient(ps.fedoraCredentials))
+    implicit val fedora = FedoraStreams()
+    for {
+      records <- parse(ps.input)
+      _ <- records.map(update).find(_.isFailure).getOrElse(Success(())) // fail fast, if an error occurs, stop updating the rest of the stream!
+    } yield records.size
+  }
 
-  def update(record: InputRecord)(implicit ps: Parameters): Try[Unit] = {
+  def update(record: InputRecord)(implicit ps: Parameters, fedora: FedoraStreams): Try[Unit] = {
     log.info(s"${record.fedoraPid}, ${record.newValue}")
-    val fedora = FedoraStreams()
     for {
       oldXML <- fedora.getXml(record.fedoraPid, ps.streamID)
       _ <- Transformer.validate(ps.streamID, ps.tag, oldXML)
@@ -57,6 +59,6 @@ object Command {
       _ <- if (oldXML != newXML) fedora.updateDatastream(record.fedoraPid, ps.streamID, newXML.toString()) else Success(())
     } yield ()
   }.recoverWith { case e =>
-    Failure(new Exception(s"failed to process: ${record.fedoraPid},${record.newValue}", e))
+    Failure(new Exception(s"failed to process: $record", e))
   }
 }

@@ -19,21 +19,35 @@ import java.io.File
 
 import org.apache.commons.csv.{CSVFormat, CSVParser, CSVRecord}
 import org.apache.commons.io.Charsets
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+import org.slf4j.{Logger, LoggerFactory}
 
+import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.util.Try
 
-case class InputRecord(fedoraPid: String, newValue:String, oldValue:String)
+case class InputRecord(fedoraPid: String, newValue: String, oldValue: String)
 
 object InputRecord {
+
+  val log: Logger = LoggerFactory.getLogger(getClass)
+
   def apply(csvRecord: CSVRecord) = new InputRecord(csvRecord.get(0), csvRecord.get(1), csvRecord.get(2))
 
+  private val expectedHeaders = InputRecord("FEDORA_ID", "NEW_VALUE", "OLD_VALUE")
+
   def parse(file: File): Try[Stream[InputRecord]] = Try {
-    CSVParser.parse(file, Charsets.UTF_8, CSVFormat.RFC4180)
-      .asScala
-      .drop(1) // Ingore the header
+    val csvRecords = CSVParser.parse(file, Charsets.UTF_8, CSVFormat.RFC4180).asScala
+    val actualHeader = InputRecord(csvRecords.head)
+    if (actualHeader != expectedHeaders)
+      throw new Exception(s"header should be: $expectedHeaders but was $actualHeader")
+    else csvRecords
       .toStream
-      .withFilter(_.asScala.size > 2) // Ignore empty or incomplete lines
-      .map(InputRecord(_))
+      .withFilter(csvRecord => // skip empty lines
+        csvRecord.asScala.size != 1 && csvRecord.asScala.head.trim != ""
+      )
+      .map{ csvRecord =>
+        if(csvRecord.asScala.size < 3  || csvRecord.asScala.seq.map(_.trim.isEmpty).toSet.contains(true))
+          throw new Exception(s"incomplete line: $csvRecord")
+        InputRecord(csvRecord)
+      }
   }
 }

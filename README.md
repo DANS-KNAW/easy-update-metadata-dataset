@@ -23,7 +23,7 @@ not expected preconditions might pass without a warning.
 * Provide a _valid_ new value in the input file.
 * Run with a representative sample in test mode and review the logged changes.
 * Change `DC` and `EMD` alike as far as applicable.
-* In case of `-s EMD -tag 'accessRights'` / `-s DC --tag rights` also
+* In case of `-s EMD -tag accessRights` / `-s DC --tag rights` also
   * Update [file rights] along.
   * Call [easy-update-fs-rdb].
   * Reboot the web-ui to clear the [hibernate] cash.

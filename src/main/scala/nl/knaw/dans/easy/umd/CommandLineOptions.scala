@@ -37,7 +37,7 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
        |
        |Usage:
        |
-       |$printedName --stream-id [EMD|DC|AMD|...] --tag [accessRights|datasetState|...] <datasets.csv>
+       |$printedName --stream-id [EMD|DC|AMD|...] --tag [accessRights|rights|datasetState|...] <datasets.csv>
        |
        |Options:
        |""".stripMargin)

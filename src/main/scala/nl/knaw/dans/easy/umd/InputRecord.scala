@@ -47,6 +47,8 @@ object InputRecord {
       .map{ csvRecord =>
         if(csvRecord.asScala.size < 3  || csvRecord.asScala.seq.map(_.trim.isEmpty).toSet.contains(true))
           throw new Exception(s"incomplete line: $csvRecord")
+        if(csvRecord.get(1) == csvRecord.get(2))
+          throw new Exception(s"old value equals new value: $csvRecord")
         InputRecord(csvRecord)
       }
   }

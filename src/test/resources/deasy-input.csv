@@ -1,2 +1,11 @@
-DATASET,NEW_VALUE
-easy-dataset:2,OPEN_ACCESS
+FEDORA_ID,NEW_VALUE,OLD_VALUE, based on https://github.com/DANS-KNAW/easy-dtap/tree/v3.2-RC-3
+easy-dataset:1,PUBLISHED,SUBMITTED
+easy-dataset:2,SUBMITTED,DRAFT
+easy-dataset:3,SUBMITTED,DRAFT, the last to change when executed with AMD datasetState
+easy-dataset:4,ANY_DISCIPLINE,HISTORY, the only one to change when executed with EMD metadataformat
+easy-dataset:5,SUBMITTED,DRAFT
+easy-dataset:6,SUBMITTED,DRAFT
+easy-dataset:7,SUBMITTED,DRAFT
+easy-dataset:8,SUBMITTED,DRAFT
+easy-dataset:9,SUBMITTED,PUBLISHED
+easy-dataset:10,SUBMITTED,PUBLISHED

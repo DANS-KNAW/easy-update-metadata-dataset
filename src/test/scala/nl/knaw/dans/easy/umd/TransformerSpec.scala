@@ -25,20 +25,18 @@ class TransformerSpec extends FlatSpec with Matchers {
   DateTimeZone.setDefault(DateTimeZone.forOffsetHours(1))
   DateTimeUtils.setCurrentMillisFixed(new DateTime("2016-12-09T13:52:51.089+01:00").getMillis)
 
-  "a plain transformation" should "replace all occurrences of a tag" in {
+  "a plain transformation" should "replace a tag with the specified old value" in {
 
-    val inputXML = <someroot><sometag>first value</sometag><sometag>second value</sometag></someroot>
-    val expectedXML = <someroot><sometag>new value</sometag><sometag>second value</sometag></someroot>
+    val inputXML = <someroot><pfx:sometag>first value</pfx:sometag><sometag>second value</sometag></someroot>
+    val expectedXML = <someroot><pfx:sometag>new value</pfx:sometag><sometag>second value</sometag></someroot>
     new PrettyPrinter(160, 2).format(
-      Transformer("SOMESTREAMID", "sometag", "first value", "new value")
-        .transform(inputXML).head
+      Transformer("SOMESTREAMID", "sometag", "first value", "new value").transform(inputXML).head
     ) shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
 
-  "AMD datasetState" should "deal with initial sword submit" in {
+  "AMD <datasetState>" should "handle initial sword submit" in {
 
     val inputXML =
-
       <damd:administrative-md version="0.1">
         <datasetState>SUBMITTED</datasetState>
         <previousState>DRAFT</previousState>
@@ -59,7 +57,6 @@ class TransformerSpec extends FlatSpec with Matchers {
       </damd:administrative-md>
 
     val expectedXML =
-
       <damd:administrative-md version="0.1">
         <datasetState>PUBLISHED</datasetState>
         <previousState>SUBMITTED</previousState>
@@ -83,15 +80,39 @@ class TransformerSpec extends FlatSpec with Matchers {
       </damd:administrative-md>
 
     new PrettyPrinter(160, 2).format(
-      Transformer("AMD", "datasetState", "SUBMITTED", "PUBLISHED")
-        .transform(inputXML).head
+      Transformer("AMD", "datasetState", "SUBMITTED", "PUBLISHED").transform(inputXML).head
     ) shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
 
-  it should "fail to deal deal with initial web-ui draft" in {
+  it should "reject an actual state that doesn't equal the old state" in {
 
     val inputXML =
+      <damd:administrative-md version="0.1">
+        <datasetState>SUBMITTED</datasetState>
+        <previousState>DRAFT</previousState>
+        <lastStateChange>2016-12-09T13:42:52.433+01:00</lastStateChange>
+        <depositorId>user001</depositorId>
+        <stateChangeDates>
+          <damd:stateChangeDate>
+            <fromState>DRAFT</fromState>
+            <toState>SUBMITTED</toState>
+            <changeDate>2016-12-09T13:42:52.434+01:00</changeDate>
+          </damd:stateChangeDate>
+        </stateChangeDates>
+        <groupIds/>
+        <damd:workflowData version="0.1">
+        <assigneeId>NOT_ASSIGNED</assigneeId>
+        <wfs:workflow>...</wfs:workflow>
+        </damd:workflowData>
+      </damd:administrative-md>
 
+    Transformer.validate("AMD", "datasetState", "PUBLISHED", inputXML)
+      .failed.get.getMessage shouldBe "expected AMD <datasetState> [PUBLISHED] but found [SUBMITTED]."
+  }
+
+  it should "reject an initial web-ui draft because missing <previousState> is not implemented" in {
+
+    val inputXML =
       <damd:administrative-md version="0.1">
         <datasetState>DRAFT</datasetState>
         <depositorId>user002</depositorId>
@@ -104,7 +125,6 @@ class TransformerSpec extends FlatSpec with Matchers {
       </damd:administrative-md>
 
     val expectedXML =
-
       <damd:administrative-md version="0.1">
         <datasetState>SUBMITTED</datasetState>
         <previousState>DRAFT</previousState>
@@ -123,7 +143,7 @@ class TransformerSpec extends FlatSpec with Matchers {
         </damd:workflowData>
       </damd:administrative-md>
 
-    Transformer.validate("AMD", "datasetState", inputXML)
-      .failed.get.getMessage should include("previousState")
+    Transformer.validate("AMD", "datasetState", "DRAFT", inputXML)
+      .failed.get.getMessage shouldBe "no <previousState> in AMD."
   }
 }

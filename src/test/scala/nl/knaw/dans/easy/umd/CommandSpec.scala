@@ -39,7 +39,7 @@ class CommandSpec extends FlatSpec with Matchers {
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("mocked message")
-    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,new,old)"
+    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,new,old), reason: mocked message"
   }
 
   it should "report fedora write error" in {
@@ -57,7 +57,7 @@ class CommandSpec extends FlatSpec with Matchers {
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("mocked message")
-    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,new,first value)"
+    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,new,first value), reason: mocked message"
   }
 
   it should "report a missing previousState" in {
@@ -69,7 +69,7 @@ class CommandSpec extends FlatSpec with Matchers {
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("previousState")
-    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,new,first value)"
+    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,new,first value), reason: no <previousState> in AMD."
   }
 
   it should "log a succeeded update" in {

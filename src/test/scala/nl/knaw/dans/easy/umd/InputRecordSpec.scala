@@ -47,7 +47,18 @@ class InputRecordSpec extends FlatSpec with Matchers {
     tempFile.delete()
   }
 
-  it should "reject to few fields" in {
+  it should "reject identical values" in {
+    createTempFile( // with comma at the end of the line
+      """FEDORA_ID,NEW_VALUE,OLD_VALUE
+        |
+        |a,b,b
+      """.stripMargin)
+    InputRecord.parse(tempFile).failed.get.getMessage shouldBe
+      "old value equals new value: CSVRecord [comment=null, mapping=null, recordNumber=3, values=[a, b, b]]"
+    tempFile.delete()
+  }
+
+  it should "reject too few fields" in {
     createTempFile( // no comma at the end of the line
       """FEDORA_ID,NEW_VALUE,OLD_VALUE
         |

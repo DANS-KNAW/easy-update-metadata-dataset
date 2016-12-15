@@ -34,10 +34,14 @@ object Transformer {
     }
   }
 
-  def validate(streamID: String, tag: String, oldXML: Elem): Try[Unit] = {
-    (streamID, tag, (oldXML \ "previousState").text) match {
-      case ("AMD", "datasetState", "") =>
-        Failure(new NotImplementedException("no <previousState> available while trying to change AMD <datasetState>."))
+  def validate(streamID: String, tag: String, expectedOldValue: String, oldXML: Elem): Try[Unit] = {
+    (streamID, tag, (oldXML \ "datasetState").text, (oldXML \ "previousState").text) match {
+      case ("AMD", "datasetState", _, "") =>
+        Failure(new NotImplementedException("no <previousState> in AMD."))
+      case ("AMD", "datasetState", `expectedOldValue`, _) =>
+        Success(Unit)
+      case ("AMD", "datasetState", actualOldValue, _) =>
+        Failure(new NotImplementedException(s"expected AMD <datasetState> [$expectedOldValue] but found [$actualOldValue]."))
       case _ =>
         Success(Unit)
     }

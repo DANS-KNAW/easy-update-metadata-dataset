@@ -29,7 +29,7 @@ ARGUMENTS
          --version                  Show version of this program
     
     trailing arguments:
-     input-file (required)   The CSV file with required changes. The first line must be
+     input-file (required)   The CSV file (RFC4180) with required changes. The first line must be
                              'FEDORA_ID,NEW_VALUE,OLD_VALUE'. Additional columns and empty lines are ignored.
 
 

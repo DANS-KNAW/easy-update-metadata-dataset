@@ -28,11 +28,11 @@ object Command {
   val log: Logger = LoggerFactory.getLogger(getClass)
 
   def main(args: Array[String]): Unit = {
-    log.debug("Starting command line interface")
     val ps = cmd.parse(args)
+    log.info(s"Started $ps")
     run(ps) match {
-      case Success((count)) => log.info(s"Changed $count ${ps.streamID} streams.")
-      case Failure(e) => log.error("failed", e)
+      case Success((count)) => log.info(s"Finished $ps")
+      case Failure(e) => log.error(s"Failed $ps", e)
     }
   }
 
@@ -41,24 +41,34 @@ object Command {
     implicit val fedora = FedoraStreams()
     for {
       records <- parse(ps.input)
-      _ <- records.map(update).find(_.isFailure).getOrElse(Success(())) // fail fast, if an error occurs, stop updating the rest of the stream!
-    } yield records.size
+      _ <- records.map(update).find(_.isFailure).getOrElse(Success()) // fail fast, if an error occurs, stop updating the rest of the stream!
+    } yield ()
   }
 
-  def update(record: InputRecord)(implicit ps: Parameters, fedora: FedoraStreams): Try[Unit] = {
-    log.info(s"${record.fedoraPid}, ${record.newValue}")
+  def update(record: InputRecord)(implicit ps: Parameters, fedora: FedoraStreams): Try[Boolean] = {
+    log.info(record.toString)
     for {
       oldXML <- fedora.getXml(record.fedoraPid, ps.streamID)
-      _ <- Transformer.validate(ps.streamID, ps.tag, oldXML)
+      _ <- Transformer.validate(ps.streamID, ps.tag, record.oldValue, oldXML)
       transformer = Transformer(ps.streamID, ps.tag, record.oldValue, record.newValue)
       newXML = transformer.transform(oldXML)
       oldLines = new PrettyPrinter(160, 2).format(oldXML).lines.toList
       newLines = new PrettyPrinter(160, 2).format(newXML.head).lines.toList
-      _ = log.info(s"old ${ps.streamID} ${oldLines.diff(newLines)}")
-      _ = log.info(s"new ${ps.streamID} ${newLines.diff(oldLines)}")
-      _ <- if (oldXML != newXML) fedora.updateDatastream(record.fedoraPid, ps.streamID, newXML.toString()) else Success(())
-    } yield ()
+      _ = log.info(s"old ${ps.streamID}: ${compare(oldLines, newLines)}")
+      _ = log.info(s"new ${ps.streamID}: ${compare(newLines, oldLines)}")
+      foundDifferences = oldXML != newXML
+      _ <- if (foundDifferences) fedora.updateDatastream(record.fedoraPid, ps.streamID, newXML.toString()) else Success(())
+    } yield foundDifferences
   }.recoverWith { case e =>
-    Failure(new Exception(s"failed to process: $record", e))
+    Failure(new Exception(s"failed to process: $record, reason: ${e.getMessage}", e))
+  }
+
+  /** @return lines of xs not in ys */
+  private def compare(xs: List[String], ys: List[String]) = {
+    val diff = xs.diff(ys)
+    if (diff.size <= 1)
+      diff.mkString("", "", "")
+    else
+      diff.mkString("\n\t", "\n\t", "")
   }
 }

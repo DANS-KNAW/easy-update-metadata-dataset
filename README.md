@@ -14,30 +14,6 @@ DESCRIPTION
 
 Batch-updates metadata streams of datasets in a Fedora Commons repository.
 
-Details for `-s AMD --tag datasetState` (which requires a change history) are documented with [tests],
-note that some legitimate preconditions are not implemented and cause a failure,
-not expected preconditions might pass without a warning.
-
-**WARNING**: It is the responsibility of the caller to
-
-* Provide a _valid_ new value in the input file.
-* Run with a representative sample in test mode and review the logged changes.
-* Change `DC` and `EMD` alike as far as applicable.
-* In case of `-s EMD -tag accessRights` / `-s DC --tag rights` also
-  * Update [file rights] along.
-  * Call [easy-update-fs-rdb].
-  * Reboot the web-ui to clear the [hibernate] cash.
-* When EMD and/or file rights are changed, call [easy-task-add-new-license], this link requires access to the legacy code base.
-* If applicable update relations such as hasDoi and isMemberOf.
-* Call [easy-update-solr-index] if necessary.
-
-[easy-update-fs-rdb]: https://github.com/DANS-KNAW/easy-update-fs-rdb
-[file rights]: https://github.com/DANS-KNAW/easy-update-metadata-fileitem
-[hibernate]: http://hibernate.org/
-[easy-task-add-new-license]: https://github.com/DANS-KNAW/easy-app/blob/master/tool/task-add-new-license/README.md
-[easy-update-solr-index]: https://github.com/DANS-KNAW/easy-update-solr-index
-[tests]: nl.knaw.dans.easy.umd.TransformerSpec
-
 
 ARGUMENTS
 ---------
@@ -53,9 +29,35 @@ ARGUMENTS
          --version                  Show version of this program
     
     trailing arguments:
-     input-file (required)   The CSV file with required changes. Columns: fedoraID, newValue, oldValue. First
-                             line is assumed to be a header. Additional columns aand lines with less columns are
-                             ignored as comment.
+     input-file (required)   The CSV file with required changes. The first line must be
+                             'FEDORA_ID,NEW_VALUE,OLD_VALUE'. Additional columns and empty lines are ignored.
+
+
+CONTEXT
+-------
+
+It is the responsibility of the caller to
+
+* Provide _valid_ new values in the input file.
+* Verify the preconditions for `--stream-id AMD --tag datasetState` which requires a change history.
+  Details are documented with [tests], note that some legitimate preconditions are not implemented and cause a failure,
+  not expected preconditions might pass without a warning.
+* For both requirements above: please run with a representative sample in test mode (without `--doUpdate`)
+  and review the logged changes.
+* Change `DC` and `EMD` alike as far as applicable. In case of `-s EMD -t accessRights` / `-s DC -t rights` also
+  * Update [file rights] along.
+  * Call [easy-update-fs-rdb].
+  * Reboot the web-ui to clear the [hibernate] cash.
+* Call [easy-task-add-new-license] if EMD and/or file rights were changed, the link requires access to the legacy code base.
+* Update relations such as hasDoi and isMemberOf if applicable.
+* Call [easy-update-solr-index] if necessary.
+
+[easy-update-fs-rdb]: https://github.com/DANS-KNAW/easy-update-fs-rdb
+[file rights]: https://github.com/DANS-KNAW/easy-update-metadata-fileitem
+[hibernate]: http://hibernate.org/
+[easy-task-add-new-license]: https://github.com/DANS-KNAW/easy-app/blob/master/tool/task-add-new-license/README.md
+[easy-update-solr-index]: https://github.com/DANS-KNAW/easy-update-solr-index
+[tests]: nl/knaw/dans/easy/umd/TransformerSpec
 
 
 INSTALLATION AND CONFIGURATION

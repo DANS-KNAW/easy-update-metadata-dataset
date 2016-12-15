@@ -57,7 +57,7 @@ It is the responsibility of the caller to
 [hibernate]: http://hibernate.org/
 [easy-task-add-new-license]: https://github.com/DANS-KNAW/easy-app/blob/master/tool/task-add-new-license/README.md
 [easy-update-solr-index]: https://github.com/DANS-KNAW/easy-update-solr-index
-[tests]: nl/knaw/dans/easy/umd/TransformerSpec
+[tests]: src/main/scala/nl/knaw/dans/easy/umd/TransformerSpec.java
 
 
 INSTALLATION AND CONFIGURATION

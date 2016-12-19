@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.umd
 
+import nl.knaw.dans.easy.umd.InputRecord.parse
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -31,6 +32,15 @@ class TransformerSpec extends FlatSpec with Matchers {
     val expectedXML = <someroot><pfx:sometag>new value</pfx:sometag><sometag>second value</sometag></someroot>
     new PrettyPrinter(160, 2).format(
       Transformer("SOMESTREAMID", "sometag", "first value", "new value").transform(inputXML).head
+    ) shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
+  it should "properly process UTF8 characters" in {
+
+    val inputXML = <someroot><pfx:sometag>Tïtel van de dataset</pfx:sometag></someroot>
+    val expectedXML = <someroot><pfx:sometag>Planetoïde van issue EASY-1128</pfx:sometag></someroot>
+    new PrettyPrinter(160, 2).format(
+      Transformer("SOMESTREAMID", "sometag", "Tïtel van de dataset", "Planetoïde van issue EASY-1128").transform(inputXML).head
     ) shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
 

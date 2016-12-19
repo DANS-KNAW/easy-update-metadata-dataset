@@ -15,27 +15,34 @@
  */
 package nl.knaw.dans.easy.umd
 
-import org.scalatest.{FlatSpec, Matchers}
+import nl.knaw.dans.easy.umd.InputRecord.parse
+import org.scalamock.scalatest.MockFactory
+import org.scalatest.{FlatSpec, Inside, Matchers, OneInstancePerTest}
+import org.slf4j.Logger
 
 import scala.util.{Failure, Success, Try}
 import scala.xml.Elem
 
-class CommandSpec extends FlatSpec with Matchers {
+class CommandSpec extends FlatSpec
+  with Matchers
+  with Inside
+  with MockFactory
+  with OneInstancePerTest  {
 
-  private def expectFedoraStream(value1: Try[Elem]) = {
-    new TestFedoraStreams {
+  private implicit val logMock = mock[Logger]
+  private def expectOneLogInfo(message: String) = (logMock.info(_: String)) expects message once()
 
-      override def getXml(pid: String, streamId: String): Try[Elem] = {
-        value1
-      }
-    }
-  }
+  private implicit val fedoraMock = mock[FedoraStreams]
+  private def expectOneFedoraGetXml(result: Try[Elem]) = fedoraMock.getXml _ expects(*, *) once() returning result
+  private def expectOneFedoraUpdate(failure: Try[Unit]) = fedoraMock.updateDatastream _ expects(*, *, *) once() returning failure
 
   "update" should "report fedora read error" in {
 
-    implicit val fedoraStreams = expectFedoraStream(Failure(new Exception("mocked message")))
-    implicit val parameters = Parameters(streamID = "", tag = "", test = true, fedoraCredentials = null, input = null)
+    expectOneLogInfo("InputRecord(easy-dataset:1,new,old)")
+    expectOneFedoraGetXml(Failure(new Exception("mocked message")))
+
     val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", newValue = "new", oldValue = "old")
+    implicit val parameters = Parameters(streamID = "", tag = "", test = true, fedoraCredentials = null, input = null)
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("mocked message")
@@ -44,16 +51,14 @@ class CommandSpec extends FlatSpec with Matchers {
 
   it should "report fedora write error" in {
 
-    implicit val fedoraStreams = new TestFedoraStreams {
+    expectOneLogInfo("InputRecord(easy-dataset:1,new,first value)")
+    expectOneLogInfo("old :   <sometag>first value</sometag>")
+    expectOneLogInfo("new :   <sometag>new</sometag>")
+    expectOneFedoraGetXml(Success(<someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>))
+    expectOneFedoraUpdate(Failure(new Exception("mocked message")))
 
-      override def getXml(pid: String, streamId: String) =
-        Success(<someroot><sometag>first value</sometag><sometag>second value</sometag></someroot>)
-
-      override def updateDatastream(pid: String, streamId: String, content: String) =
-        Failure(new Exception("mocked message"))
-    }
-    implicit val parameters = Parameters(streamID = "", tag = "sometag", test = true, fedoraCredentials = null, input = null)
     val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", newValue = "new", oldValue = "first value")
+    implicit val parameters = Parameters(streamID = "", tag = "sometag", test = true, fedoraCredentials = null, input = null)
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("mocked message")
@@ -62,26 +67,28 @@ class CommandSpec extends FlatSpec with Matchers {
 
   it should "report a missing previousState" in {
 
-    implicit val fedoraStreams = expectFedoraStream(Success(<someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>))
-    implicit val parameters = Parameters(streamID = "AMD", tag = "datasetState", test = true, fedoraCredentials = null, input = null)
-    val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", newValue = "new", oldValue = "first value")
+    expectOneLogInfo("InputRecord(easy-dataset:1,new,first value)")
+    expectOneFedoraGetXml(Success(<someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>))
 
+    val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", newValue = "new", oldValue = "first value")
+    implicit val parameters = Parameters(streamID = "AMD", tag = "datasetState", test = true, fedoraCredentials = null, input = null)
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("previousState")
     throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,new,first value), reason: no <previousState> in AMD."
   }
 
-  it should "log a succeeded update" in {
+  it should "preserve UTF8 characters" in {
 
-    implicit val fedoraStreams = expectFedoraStream(Success(<someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>))
+    expectOneLogInfo("new someStream:   <sometag>Planetoïde van issue EASY-1128</sometag>")
+    expectOneLogInfo("old someStream:   <sometag>Titel van de dataset</sometag>")
+    expectOneLogInfo("InputRecord(easy-dataset:1,Planetoïde van issue EASY-1128,Titel van de dataset)")
+    expectOneFedoraGetXml(Success(<someroot><sometag>Titel van de dataset</sometag> <sometag>tweeën</sometag></someroot>))
+    expectOneFedoraUpdate(Success(Unit))
+
+    // reads a CSV file with UTF8 in the new value, the file can also be applied manually as explained in its comment column
+    val inputRecord = parse(new java.io.File("src/test/resources/deasy-UTF8-input.csv")).get.head
     implicit val parameters = Parameters(streamID = "someStream", tag = "sometag", test = true, fedoraCredentials = null, input = null)
-    val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", newValue = "new", oldValue = "first value")
-
-    // tried with an implicit log parameter for the update method, otherwise as in easy-update-solr-index
-    // (log.info(_: String)) expects "old someStream List(  <sometag>first value</sometag>)" once()
-    // (log.info(_: String)) expects "old someStream List(  <sometag>new</sometag>)" once()
-    // (log.info(_: String)) expects "test-mode: skipping request for easy-dataset:1/someStream" once()
 
     Command.update(inputRecord) shouldBe a[Success[_]]
   }

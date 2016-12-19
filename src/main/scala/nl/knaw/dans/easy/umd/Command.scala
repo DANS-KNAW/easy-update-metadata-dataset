@@ -25,7 +25,7 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.PrettyPrinter
 
 object Command {
-  val log: Logger = LoggerFactory.getLogger(getClass)
+  implicit val log: Logger = LoggerFactory.getLogger(getClass)
 
   def main(args: Array[String]): Unit = {
     val ps = cmd.parse(args)
@@ -41,11 +41,11 @@ object Command {
     implicit val fedora = FedoraStreams()
     for {
       records <- parse(ps.input)
-      _ <- records.map(update).find(_.isFailure).getOrElse(Success()) // fail fast, if an error occurs, stop updating the rest of the stream!
+      _ <- records.map(update).find(_.isFailure).getOrElse(Success(Unit)) // fail fast, if an error occurs, stop updating the rest of the stream!
     } yield ()
   }
 
-  def update(record: InputRecord)(implicit ps: Parameters, fedora: FedoraStreams): Try[Boolean] = {
+  def update(record: InputRecord)(implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Boolean] = {
     log.info(record.toString)
     for {
       oldXML <- fedora.getXml(record.fedoraPid, ps.streamID)

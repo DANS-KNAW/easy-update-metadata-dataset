@@ -12,7 +12,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-Batch-updates metadata streams of datasets in a Fedora Commons repository.
+Batch-updates XML streams of objects in a Fedora Commons repository.
 
 
 ARGUMENTS
@@ -39,6 +39,7 @@ CONTEXT
 It is the responsibility of the caller to
 
 * Provide _valid_ new values in the input file.
+* Make sure the csv file is properly stored as UTF8, please export a spreadsheet with open-office.
 * Verify the preconditions for `--stream-id AMD --tag datasetState` which requires a change history.
   Details are documented with [tests], note that some legitimate preconditions are not implemented and cause a failure,
   not expected preconditions might pass without a warning.

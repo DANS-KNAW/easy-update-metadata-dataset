@@ -32,7 +32,7 @@ class InputRecordSpec extends FlatSpec with Matchers {
         |a,b,c
       """.stripMargin)
     InputRecord.parse(tempFile).failed.get.getMessage shouldBe
-      "header should be: InputRecord(1,FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE) but was InputRecord(1,FEDORA_ID,STREAM_ID,XML_TAG,VALUE,REPLACEMENT)"
+      "header line should be: InputRecord(1,FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE) but was InputRecord(1,FEDORA_ID,STREAM_ID,XML_TAG,VALUE,REPLACEMENT)"
     tempFile.delete()
   }
 
@@ -43,7 +43,7 @@ class InputRecordSpec extends FlatSpec with Matchers {
         |a,b,
       """.stripMargin)
     InputRecord.parse(tempFile).failed.get.getMessage shouldBe
-      "incomplete line: CSVRecord [comment=null, mapping=null, recordNumber=3, values=[a, b, ]]"
+      "incomplete line 3: a,b,"
     tempFile.delete()
   }
 
@@ -54,7 +54,7 @@ class InputRecordSpec extends FlatSpec with Matchers {
         |a,b
       """.stripMargin)
     InputRecord.parse(tempFile).failed.get.getMessage shouldBe
-      "incomplete line: CSVRecord [comment=null, mapping=null, recordNumber=3, values=[a, b]]"
+      "incomplete line 3: a,b"
     tempFile.delete()
   }
 
@@ -65,7 +65,7 @@ class InputRecordSpec extends FlatSpec with Matchers {
         |a,b,c,d,d
       """.stripMargin)
     InputRecord.parse(tempFile).failed.get.getMessage shouldBe
-      "old value equals new value: CSVRecord [comment=null, mapping=null, recordNumber=3, values=[a, b, c, d, d]]"
+      "old value equals new value at line 3: a,b,c,d,d"
     tempFile.delete()
   }
 

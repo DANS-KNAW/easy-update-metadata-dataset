@@ -49,12 +49,12 @@ object Command {
             (implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = {
     log.info(record.toString)
     for {
-      oldXML <- fedora.getXml(record.fedoraPid, record.streamID)
-      _ <- Transformer.validate(record.streamID, record.tag, record.oldValue, oldXML)
-      transformer = Transformer(record.streamID, record.tag, record.oldValue, record.newValue)
+      oldXML <- fedora.getXml(record.fedoraID, record.streamID)
+      _ <- Transformer.validate(record.streamID, record.xmlTag, record.oldValue, oldXML)
+      transformer = Transformer(record.streamID, record.xmlTag, record.oldValue, record.newValue)
       newXML = transformer.transform(oldXML)
       _ <- reportChanges(record, oldXML, newXML)
-      _ <- fedora.updateDatastream(record.fedoraPid, record.streamID, newXML.toString())
+      _ <- fedora.updateDatastream(record.fedoraID, record.streamID, newXML.toString())
     } yield ()
   }.recoverWith { case e =>
     Failure(new Exception(s"failed to process: $record, reason: ${e.getMessage}", e))

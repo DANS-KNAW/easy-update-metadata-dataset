@@ -43,7 +43,7 @@ class CommandSpec extends FlatSpec
     expectOneLogInfo("InputRecord(1,easy-dataset:1,STID,TAG,old,new)")
     expectOneFedoraGetXml(Failure(new Exception("mocked message")))
 
-    val inputRecord = InputRecord(1, fedoraPid = "easy-dataset:1", streamID = "STID", tag = "TAG", newValue = "new", oldValue = "old")
+    val inputRecord = InputRecord(fedoraID = "easy-dataset:1", streamID = "STID", xmlTag = "TAG", newValue = "new", oldValue = "old")
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("mocked message")
@@ -58,7 +58,7 @@ class CommandSpec extends FlatSpec
     expectOneFedoraGetXml(Success(<someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>))
     expectOneFedoraUpdate(Failure(new Exception("mocked message")))
 
-    val inputRecord = InputRecord(1, fedoraPid = "easy-dataset:1", streamID = "", tag = "sometag", newValue = "new", oldValue = "first value")
+    val inputRecord = InputRecord(fedoraID = "easy-dataset:1", streamID = "", xmlTag = "sometag", newValue = "new", oldValue = "first value")
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("mocked message")
@@ -70,7 +70,7 @@ class CommandSpec extends FlatSpec
     expectOneLogInfo("InputRecord(1,easy-dataset:1,AMD,datasetState,first value,new)")
     expectOneFedoraGetXml(Success(<someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>))
 
-    val inputRecord = InputRecord(1, fedoraPid = "easy-dataset:1", streamID = "AMD", tag = "datasetState", newValue = "new", oldValue = "first value")
+    val inputRecord = InputRecord(fedoraID = "easy-dataset:1", streamID = "AMD", xmlTag = "datasetState", newValue = "new", oldValue = "first value")
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("previousState")

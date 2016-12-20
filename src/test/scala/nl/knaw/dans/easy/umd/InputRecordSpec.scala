@@ -28,17 +28,17 @@ class InputRecordSpec extends FlatSpec with Matchers {
 
   "parse" should "reject invalid header" in {
     createTempFile(
-      """FEDORA_ID,OLD_VALUE,NEW_VALUE
+      """FEDORA_ID,STREAM_ID,XML_TAG,VALUE,REPLACEMENT
         |a,b,c
       """.stripMargin)
     InputRecord.parse(tempFile).failed.get.getMessage shouldBe
-      "header should be: InputRecord(FEDORA_ID,NEW_VALUE,OLD_VALUE) but was InputRecord(FEDORA_ID,OLD_VALUE,NEW_VALUE)"
+      "header should be: InputRecord(FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE) but was InputRecord(FEDORA_ID,STREAM_ID,XML_TAG,VALUE,REPLACEMENT)"
     tempFile.delete()
   }
 
   it should "reject empty fields" in {
     createTempFile( // with comma at the end of the line
-      """FEDORA_ID,NEW_VALUE,OLD_VALUE
+      """FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE
         |
         |a,b,
       """.stripMargin)
@@ -49,7 +49,7 @@ class InputRecordSpec extends FlatSpec with Matchers {
 
   it should "reject too few fields" in {
     createTempFile( // no comma at the end of the line
-      """FEDORA_ID,NEW_VALUE,OLD_VALUE
+      """FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE
         |
         |a,b
       """.stripMargin)
@@ -60,25 +60,25 @@ class InputRecordSpec extends FlatSpec with Matchers {
 
   it should "reject identical values" in {
     createTempFile(
-      """FEDORA_ID,NEW_VALUE,OLD_VALUE
+      """FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE
         |
-        |a,b,b
+        |a,b,c,d,d
       """.stripMargin)
     InputRecord.parse(tempFile).failed.get.getMessage shouldBe
-      "old value equals new value: CSVRecord [comment=null, mapping=null, recordNumber=3, values=[a, b, b]]"
+      "old value equals new value: CSVRecord [comment=null, mapping=null, recordNumber=3, values=[a, b, c, d, d]]"
     tempFile.delete()
   }
 
   it should "skip empty lines" in {
     createTempFile(
-      """FEDORA_ID,NEW_VALUE,OLD_VALUE
+      """FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE
         |
-        |a,b,c
+        |a,b,c,d,e
         |
-        |f,g,h""".stripMargin) // explicit unterminated last line
+        |f,g,h,i,j""".stripMargin) // explicit unterminated last line
     InputRecord.parse(tempFile).get shouldBe Stream(
-      InputRecord("a", "b", "c"),
-      InputRecord("f", "g", "h")
+      InputRecord("a", "b", "c", "d", "e"),
+      InputRecord("f", "g", "h", "i", "j")
     )
     tempFile.delete()
   }

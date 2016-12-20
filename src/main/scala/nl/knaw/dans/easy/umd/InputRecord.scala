@@ -24,15 +24,15 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.util.Try
 
-case class InputRecord(fedoraPid: String, newValue: String, oldValue: String)
+case class InputRecord(fedoraPid: String, streamID: String, tag: String, oldValue: String, newValue: String)
 
 object InputRecord {
 
   val log: Logger = LoggerFactory.getLogger(getClass)
 
-  def apply(csvRecord: CSVRecord) = new InputRecord(csvRecord.get(0), csvRecord.get(1), csvRecord.get(2))
+  def apply(csvRecord: CSVRecord) = new InputRecord(csvRecord.get(0), csvRecord.get(1), csvRecord.get(2), csvRecord.get(3), csvRecord.get(4))
 
-  private val expectedHeaders = InputRecord("FEDORA_ID", "NEW_VALUE", "OLD_VALUE")
+  private val expectedHeaders = InputRecord("FEDORA_ID", "STREAM_ID", "XML_TAG", "OLD_VALUE", "NEW_VALUE")
 
   def parse(file: File): Try[Stream[InputRecord]] = Try {
     val csvRecords = CSVParser.parse(file, Charsets.UTF_8, CSVFormat.RFC4180).asScala
@@ -45,11 +45,12 @@ object InputRecord {
         csvRecord.asScala.size != 1 && csvRecord.asScala.head.trim != ""
       )
       .map{ csvRecord =>
-        if(csvRecord.asScala.size < 3  || csvRecord.asScala.seq.map(_.trim.isEmpty).toSet.contains(true))
+        if(csvRecord.asScala.size < 5 || csvRecord.asScala.seq.map(_.trim.isEmpty).toSet.contains(true))
           throw new Exception(s"incomplete line: $csvRecord")
-        if(csvRecord.get(1) == csvRecord.get(2))
+        val record = InputRecord(csvRecord)
+        if(record.oldValue == record.newValue)
           throw new Exception(s"old value equals new value: $csvRecord")
-        InputRecord(csvRecord)
+        record
       }
   }
 }

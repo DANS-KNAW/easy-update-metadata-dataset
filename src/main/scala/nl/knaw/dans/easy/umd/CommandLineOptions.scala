@@ -22,13 +22,12 @@ import com.yourmediashelf.fedora.client.FedoraCredentials
 import org.rogach.scallop._
 import org.slf4j.{Logger, LoggerFactory}
 
-class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/resources/deasy-input.csv".split(" ")) extends ScallopConf(args) {
+class CommandLineOptions(args: Array[String] = "src/test/resources/deasy-input.csv".split(" ")) extends ScallopConf(args) {
 
   appendDefaultToDescription = true
   editBuilder(_.setHelpWidth(110))
 
   printedName = "easy-update-metadata-dataset"
-  val _________ : String = " " * printedName.length
 
   version(s"$printedName v${Version()}")
   banner(
@@ -37,7 +36,7 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
        |
        |Usage:
        |
-       |$printedName --stream-id [EMD|DC|AMD|...] --tag [accessRights|rights|datasetState|...] <datasets.csv>
+       |$printedName <datasets.csv>
        |
        |Options:
        |""".stripMargin)
@@ -45,11 +44,6 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
   val doUpdate: ScallopOption[Boolean] = opt[Boolean](name = "doUpdate", noshort = true,
     descr = "Without this argument no changes are made to the repository, the default is a test mode that logs the intended changes",
     default = Some(false))
-
-  val streamID: ScallopOption[String] = opt[String](name = "stream-id", short = 's', required = true,
-    descr = "id of fedoara stream to update")
-  val tag: ScallopOption[String] = opt[String](name = "tag", short = 't', required = true,
-    descr = "xml tag to change")
 
   val fedoraUrl: ScallopOption[URL] = opt[URL](name = "fedora-url", short = 'f',
     descr = "Base url for the fedora repository",
@@ -60,7 +54,7 @@ class CommandLineOptions(args: Array[String] = "-ss -tt -f http:// src/test/reso
     descr = "Password for fedora repository, if omitted provide it on stdin")
 
   val inputFile: ScallopOption[File] = trailArg[File](name = "input-file", required = true,
-    descr = "The CSV file (RFC4180) with required changes. The first line must be 'FEDORA_ID,NEW_VALUE,OLD_VALUE'. Additional columns and empty lines are ignored.")
+    descr = "The CSV file (RFC4180) with required changes. The first line must be 'FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE', in that order. Additional columns and empty lines are ignored.")
 
   validateFileExists(inputFile)
   validateFileIsFile(inputFile)
@@ -85,7 +79,7 @@ object CommandLineOptions {
     }
 
     // Fill Parameters with values from command line
-    val params = Parameters(opts.streamID(), opts.tag(), !opts.doUpdate(), fedoraCredentials, opts.inputFile())
+    val params = Parameters(!opts.doUpdate(), fedoraCredentials, opts.inputFile())
 
     log.debug(s"Using the following settings: $params")
 

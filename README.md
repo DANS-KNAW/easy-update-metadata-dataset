@@ -6,7 +6,7 @@ easy-update-metadata-dataset
 SYNOPSIS
 --------
 
-    easy-update-metadata-dataset --stream-id [EMD|DC|AMD|...] --tag [accessRights|rights|datasetState|...] <datasets.csv>
+    easy-update-metadata-dataset <datasets.csv>
 
 
 DESCRIPTION
@@ -18,20 +18,18 @@ Batch-updates XML streams of objects in a Fedora Commons repository.
 ARGUMENTS
 ---------
 
-         --doUpdate                 Without this argument no changes are made to the repository, the default is a
-                                    test mode that logs the intended changes
-         --fedora-password  <arg>   Password for fedora repository, if omitted provide it on stdin
-     -f, --fedora-url  <arg>        Base url for the fedora repository (default = http://localhost:8080/fedora)
-         --fedora-username  <arg>   Username for fedora repository, if omitted provide it on stdin
-     -s, --stream-id  <arg>         id of fedoara stream to update
-     -t, --tag  <arg>               xml tag to change
-         --help                     Show help message
-         --version                  Show version of this program
+          --doUpdate                 Without this argument no changes are made to the repository, the default is a
+                                     test mode that logs the intended changes
+          --fedora-password  <arg>   Password for fedora repository, if omitted provide it on stdin
+      -f, --fedora-url  <arg>        Base url for the fedora repository (default = http://localhost:8080/fedora)
+          --fedora-username  <arg>   Username for fedora repository, if omitted provide it on stdin
+          --help                     Show help message
+          --version                  Show version of this program
     
-    trailing arguments:
-     input-file (required)   The CSV file (RFC4180) with required changes. The first line must be
-                             'FEDORA_ID,NEW_VALUE,OLD_VALUE'. Additional columns and empty lines are ignored.
-
+     trailing arguments:
+      input-file (required)   The CSV file (RFC4180) with required changes. The first line must be
+                              'FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE', in that order. Additional columns
+                              and empty lines are ignored.
 
 CONTEXT
 -------
@@ -39,19 +37,25 @@ CONTEXT
 It is the responsibility of the caller to
 
 * Provide _valid_ new values in the input file.
-* Make sure the csv file is properly stored as UTF8, please export a spreadsheet with open-office.
-* Verify the preconditions for `--stream-id AMD --tag datasetState` which requires a change history.
+* Make sure the CSV file is properly stored as UTF8, please export a spreadsheet with open-office for a valid format.
+* Verify the preconditions for straem `AMD` and XML-tag `datasetState` which requires a change history.
   Details are documented with [tests], note that some legitimate preconditions are not implemented and cause a failure,
   not expected preconditions might pass without a warning.
 * For both requirements above: please run with a representative sample in test mode (without `--doUpdate`)
   and review the logged changes.
-* Change `DC` and `EMD` alike as far as applicable. In case of `-s EMD -t accessRights` / `-s DC -t rights` also
-  * Update [file rights] along.
+* Change `DC` and `EMD` (if applicable) in subsequent lines,
+  thus at most one dataset will have inconsistent values in case of trouble.
+  In case of `EMD,accessRights` / `DC,rights` also
+  * Update [file rights].
   * Call [easy-update-fs-rdb].
   * Reboot the web-ui to clear the [hibernate] cash.
 * Call [easy-task-add-new-license] if EMD and/or file rights were changed, the link requires access to the legacy code base.
-* Update relations such as hasDoi and isMemberOf if applicable.
+* Update relations such as `hasDoi`, `isMemberOf`, collections ...
 * Call [easy-update-solr-index] if necessary.
+
+The legacy code base provides [CSV examples] for the `deasy` environment.
+
+Any `datsetSate` in an `AMD` stream with another value than the `OLD_VALUE` in the CSV aborts the batch.
 
 [easy-update-fs-rdb]: https://github.com/DANS-KNAW/easy-update-fs-rdb
 [file rights]: https://github.com/DANS-KNAW/easy-update-metadata-fileitem
@@ -59,6 +63,7 @@ It is the responsibility of the caller to
 [easy-task-add-new-license]: https://github.com/DANS-KNAW/easy-app/blob/master/tool/task-add-new-license/README.md
 [easy-update-solr-index]: https://github.com/DANS-KNAW/easy-update-solr-index
 [tests]: src/test/scala/nl/knaw/dans/easy/umd/TransformerSpec.scala
+[CSV examples]: src/test/resources
 
 
 INSTALLATION AND CONFIGURATION

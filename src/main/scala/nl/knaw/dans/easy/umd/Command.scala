@@ -48,16 +48,16 @@ object Command {
   def update(record: InputRecord)(implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Boolean] = {
     log.info(record.toString)
     for {
-      oldXML <- fedora.getXml(record.fedoraPid, ps.streamID)
-      _ <- Transformer.validate(ps.streamID, ps.tag, record.oldValue, oldXML)
-      transformer = Transformer(ps.streamID, ps.tag, record.oldValue, record.newValue)
+      oldXML <- fedora.getXml(record.fedoraPid, record.streamID)
+      _ <- Transformer.validate(record.streamID, record.tag, record.oldValue, oldXML)
+      transformer = Transformer(record.streamID, record.tag, record.oldValue, record.newValue)
       newXML = transformer.transform(oldXML)
       oldLines = new PrettyPrinter(160, 2).format(oldXML).lines.toList
       newLines = new PrettyPrinter(160, 2).format(newXML.head).lines.toList
-      _ = log.info(s"old ${ps.streamID}: ${compare(oldLines, newLines)}")
-      _ = log.info(s"new ${ps.streamID}: ${compare(newLines, oldLines)}")
+      _ = log.info(s"old ${record.streamID}: ${compare(oldLines, newLines)}")
+      _ = log.info(s"new ${record.streamID}: ${compare(newLines, oldLines)}")
       foundDifferences = oldXML != newXML
-      _ <- if (foundDifferences) fedora.updateDatastream(record.fedoraPid, ps.streamID, newXML.toString()) else Success(())
+      _ <- if (foundDifferences) fedora.updateDatastream(record.fedoraPid, record.streamID, newXML.toString()) else Success(())
     } yield foundDifferences
   }.recoverWith { case e =>
     Failure(new Exception(s"failed to process: $record, reason: ${e.getMessage}", e))

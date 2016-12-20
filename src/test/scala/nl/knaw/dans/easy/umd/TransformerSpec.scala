@@ -15,7 +15,6 @@
  */
 package nl.knaw.dans.easy.umd
 
-import nl.knaw.dans.easy.umd.InputRecord.parse
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
 import org.scalatest.{FlatSpec, Matchers}
 

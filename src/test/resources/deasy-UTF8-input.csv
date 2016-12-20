@@ -1,2 +1,3 @@
-FEDORA_ID,NEW_VALUE,OLD_VALUE, based on https://github.com/DANS-KNAW/easy-dtap/tree/v3.2-RC-3
-easy-dataset:1,Planetoïde van issue EASY-1128,Titel van de dataset, execute with stream DC/EMD and tag title
+FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE, based on  based on https://github.com/DANS-KNAW/easy-dtap/tree/v3.2-RC-3/provisioning/roles/easy_test_datasets
+easy-dataset:1,EMD,title,Titel van de dataset,Planetoïde van issue EASY-1128
+easy-dataset:1,DC,title,Titel van de dataset,Planetoïde van issue EASY-1128

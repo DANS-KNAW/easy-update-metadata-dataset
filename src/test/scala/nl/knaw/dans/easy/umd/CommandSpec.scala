@@ -36,59 +36,57 @@ class CommandSpec extends FlatSpec
   private def expectOneFedoraGetXml(result: Try[Elem]) = fedoraMock.getXml _ expects(*, *) once() returning result
   private def expectOneFedoraUpdate(failure: Try[Unit]) = fedoraMock.updateDatastream _ expects(*, *, *) once() returning failure
 
+  implicit val parameters = Parameters(test = true, fedoraCredentials = null, input = null)
+
   "update" should "report fedora read error" in {
 
-    expectOneLogInfo("InputRecord(easy-dataset:1,new,old)")
+    expectOneLogInfo("InputRecord(easy-dataset:1,STID,TAG,old,new)")
     expectOneFedoraGetXml(Failure(new Exception("mocked message")))
 
-    val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", newValue = "new", oldValue = "old")
-    implicit val parameters = Parameters(streamID = "", tag = "", test = true, fedoraCredentials = null, input = null)
+    val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", streamID = "STID", tag = "TAG", newValue = "new", oldValue = "old")
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("mocked message")
-    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,new,old), reason: mocked message"
+    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,STID,TAG,old,new), reason: mocked message"
   }
 
   it should "report fedora write error" in {
 
-    expectOneLogInfo("InputRecord(easy-dataset:1,new,first value)")
+    expectOneLogInfo("InputRecord(easy-dataset:1,,sometag,first value,new)")
     expectOneLogInfo("old :   <sometag>first value</sometag>")
     expectOneLogInfo("new :   <sometag>new</sometag>")
     expectOneFedoraGetXml(Success(<someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>))
     expectOneFedoraUpdate(Failure(new Exception("mocked message")))
 
-    val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", newValue = "new", oldValue = "first value")
-    implicit val parameters = Parameters(streamID = "", tag = "sometag", test = true, fedoraCredentials = null, input = null)
+    val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", streamID = "", tag = "sometag", newValue = "new", oldValue = "first value")
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("mocked message")
-    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,new,first value), reason: mocked message"
+    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,,sometag,first value,new), reason: mocked message"
   }
 
   it should "report a missing previousState" in {
 
-    expectOneLogInfo("InputRecord(easy-dataset:1,new,first value)")
+    expectOneLogInfo("InputRecord(easy-dataset:1,AMD,datasetState,first value,new)")
     expectOneFedoraGetXml(Success(<someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>))
 
-    val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", newValue = "new", oldValue = "first value")
-    implicit val parameters = Parameters(streamID = "AMD", tag = "datasetState", test = true, fedoraCredentials = null, input = null)
+    val inputRecord = InputRecord(fedoraPid = "easy-dataset:1", streamID = "AMD", tag = "datasetState", newValue = "new", oldValue = "first value")
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("previousState")
-    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,new,first value), reason: no <previousState> in AMD."
+    throwable.getMessage shouldBe "failed to process: InputRecord(easy-dataset:1,AMD,datasetState,first value,new), reason: no <previousState> in AMD."
   }
 
   it should "preserve UTF8 characters" in {
 
-    expectOneLogInfo("new someStream:   <sometag>Planetoïde van issue EASY-1128</sometag>")
-    expectOneLogInfo("old someStream:   <sometag>Titel van de dataset</sometag>")
-    expectOneLogInfo("InputRecord(easy-dataset:1,Planetoïde van issue EASY-1128,Titel van de dataset)")
-    expectOneFedoraGetXml(Success(<someroot><sometag>Titel van de dataset</sometag> <sometag>tweeën</sometag></someroot>))
+    expectOneLogInfo("new EMD:   <title>Planetoïde van issue EASY-1128</title>")
+    expectOneLogInfo("old EMD:   <title>Titel van de dataset</title>")
+    expectOneLogInfo("InputRecord(easy-dataset:1,EMD,title,Titel van de dataset,Planetoïde van issue EASY-1128)")
+    expectOneFedoraGetXml(Success(<someroot><title>Titel van de dataset</title> <sometag>tweeën</sometag></someroot>))
     expectOneFedoraUpdate(Success(Unit))
 
     // reads a CSV file with UTF8 in the new value, the file can also be applied manually as explained in its comment column
     val inputRecord = parse(new java.io.File("src/test/resources/deasy-UTF8-input.csv")).get.head
-    implicit val parameters = Parameters(streamID = "someStream", tag = "sometag", test = true, fedoraCredentials = null, input = null)
 
     Command.update(inputRecord) shouldBe a[Success[_]]
   }

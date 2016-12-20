@@ -22,7 +22,7 @@ import nl.knaw.dans.easy.umd.{CommandLineOptions => cmd}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.{Failure, Success, Try}
-import scala.xml.PrettyPrinter
+import scala.xml.{Elem, Node, PrettyPrinter}
 
 object Command {
   implicit val log: Logger = LoggerFactory.getLogger(getClass)
@@ -31,7 +31,7 @@ object Command {
     val ps = cmd.parse(args)
     log.info(s"Started $ps")
     run(ps) match {
-      case Success((count)) => log.info(s"Finished $ps")
+      case Success(_) => log.info(s"Finished $ps")
       case Failure(e) => log.error(s"Failed $ps", e)
     }
   }
@@ -45,22 +45,32 @@ object Command {
     } yield ()
   }
 
-  def update(record: InputRecord)(implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Boolean] = {
+  def update(record: InputRecord)
+            (implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = {
     log.info(record.toString)
     for {
       oldXML <- fedora.getXml(record.fedoraPid, record.streamID)
       _ <- Transformer.validate(record.streamID, record.tag, record.oldValue, oldXML)
       transformer = Transformer(record.streamID, record.tag, record.oldValue, record.newValue)
       newXML = transformer.transform(oldXML)
-      oldLines = new PrettyPrinter(160, 2).format(oldXML).lines.toList
-      newLines = new PrettyPrinter(160, 2).format(newXML.head).lines.toList
-      _ = log.info(s"old ${record.streamID}: ${compare(oldLines, newLines)}")
-      _ = log.info(s"new ${record.streamID}: ${compare(newLines, oldLines)}")
-      foundDifferences = oldXML != newXML
-      _ <- if (foundDifferences) fedora.updateDatastream(record.fedoraPid, record.streamID, newXML.toString()) else Success(())
-    } yield foundDifferences
+      _ <- reportChanges(record, oldXML, newXML)
+      _ <- fedora.updateDatastream(record.fedoraPid, record.streamID, newXML.toString())
+    } yield ()
   }.recoverWith { case e =>
     Failure(new Exception(s"failed to process: $record, reason: ${e.getMessage}", e))
+  }
+
+  def reportChanges(record: InputRecord, oldXML: Elem, newXML: Seq[Node])
+                   (implicit log: Logger): Try[Unit] = {
+    val oldLines = new PrettyPrinter(160, 2).format(oldXML).lines.toList
+    val newLines = new PrettyPrinter(160, 2).format(newXML.head).lines.toList
+    if (oldXML == newXML)
+      Failure(new Exception(s"could not find ${record.streamID} <${record.oldValue}>${record.oldValue}</${record.oldValue}>"))
+    else {
+      log.info(s"old ${record.streamID}: ${compare(oldLines, newLines)}")
+      log.info(s"new ${record.streamID}: ${compare(newLines, oldLines)}")
+      Success(Unit)
+    }
   }
 
   /** @return lines of xs not in ys */

@@ -38,13 +38,13 @@ It is the responsibility of the caller to
 
 * Provide _valid_ new values in the input file.
 * Make sure the CSV file is properly stored as UTF8, please export a spreadsheet with open-office for a valid format.
-* Verify the preconditions for straem `AMD` and XML-tag `datasetState` which requires a change history.
+* Specify all changes for one dataset in subsequent lines, thus at most one dataset will have inconsistent values
+  in case of trouble such as the old value not found or a system failure.
+* Verify the preconditions for stream `AMD` and XML tag `datasetState` which requires a change history.
   Details are documented with [tests], note that some legitimate preconditions are not implemented and cause a failure,
   not expected preconditions might pass without a warning.
-* For both requirements above: please run with a representative sample in test mode (without `--doUpdate`)
-  and review the logged changes.
-* Change `DC` and `EMD` (if applicable) in subsequent lines,
-  thus at most one dataset will have inconsistent values in case of trouble.
+* Execute with a representative sample in test mode (without `--doUpdate`) and review the logged changes.
+* Change the streams `DC` and `EMD` alike as far as applicable.
   In case of `EMD,accessRights` / `DC,rights` also
   * Update [file rights].
   * Call [easy-update-fs-rdb].
@@ -54,8 +54,6 @@ It is the responsibility of the caller to
 * Call [easy-update-solr-index] if necessary.
 
 The legacy code base provides [CSV examples] for the `deasy` environment.
-
-Any `datsetSate` in an `AMD` stream with another value than the `OLD_VALUE` in the CSV aborts the batch.
 
 [easy-update-fs-rdb]: https://github.com/DANS-KNAW/easy-update-fs-rdb
 [file rights]: https://github.com/DANS-KNAW/easy-update-metadata-fileitem

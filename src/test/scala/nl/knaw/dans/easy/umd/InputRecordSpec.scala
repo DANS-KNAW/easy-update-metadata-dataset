@@ -32,7 +32,7 @@ class InputRecordSpec extends FlatSpec with Matchers {
         |a,b,c
       """.stripMargin)
     InputRecord.parse(tempFile).failed.get.getMessage shouldBe
-      "header should be: InputRecord(FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE) but was InputRecord(FEDORA_ID,STREAM_ID,XML_TAG,VALUE,REPLACEMENT)"
+      "header should be: InputRecord(1,FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE) but was InputRecord(1,FEDORA_ID,STREAM_ID,XML_TAG,VALUE,REPLACEMENT)"
     tempFile.delete()
   }
 
@@ -77,8 +77,8 @@ class InputRecordSpec extends FlatSpec with Matchers {
         |
         |f,g,h,i,j""".stripMargin) // explicit unterminated last line
     InputRecord.parse(tempFile).get shouldBe Stream(
-      InputRecord("a", "b", "c", "d", "e"),
-      InputRecord("f", "g", "h", "i", "j")
+      InputRecord(3, "a", "b", "c", "d", "e"),
+      InputRecord(5, "f", "g", "h", "i", "j")
     )
     tempFile.delete()
   }

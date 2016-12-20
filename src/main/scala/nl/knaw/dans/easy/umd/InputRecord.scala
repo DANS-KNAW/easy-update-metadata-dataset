@@ -24,15 +24,15 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.util.Try
 
-case class InputRecord(fedoraPid: String, streamID: String, tag: String, oldValue: String, newValue: String)
+case class InputRecord(recordNr: Long, fedoraPid: String, streamID: String, tag: String, oldValue: String, newValue: String)
 
 object InputRecord {
 
   val log: Logger = LoggerFactory.getLogger(getClass)
 
-  def apply(csvRecord: CSVRecord) = new InputRecord(csvRecord.get(0), csvRecord.get(1), csvRecord.get(2), csvRecord.get(3), csvRecord.get(4))
+  def apply(csvRecord: CSVRecord) = new InputRecord(csvRecord.getRecordNumber, csvRecord.get(0), csvRecord.get(1), csvRecord.get(2), csvRecord.get(3), csvRecord.get(4))
 
-  private val expectedHeaders = InputRecord("FEDORA_ID", "STREAM_ID", "XML_TAG", "OLD_VALUE", "NEW_VALUE")
+  private val expectedHeaders = InputRecord(1, "FEDORA_ID", "STREAM_ID", "XML_TAG", "OLD_VALUE", "NEW_VALUE")
 
   def parse(file: File): Try[Stream[InputRecord]] = Try {
     val csvRecords = CSVParser.parse(file, Charsets.UTF_8, CSVFormat.RFC4180).asScala

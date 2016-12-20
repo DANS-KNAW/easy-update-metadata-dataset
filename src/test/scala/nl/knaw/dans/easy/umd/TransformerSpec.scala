@@ -119,7 +119,34 @@ class TransformerSpec extends FlatSpec with Matchers {
       .failed.get.getMessage shouldBe "expected AMD <datasetState> [PUBLISHED] but found [SUBMITTED]."
   }
 
-  it should "reject an initial web-ui draft because missing <previousState> is not implemented" in {
+  it should "reject multiple datasetState-s, whatever their values are" in {
+
+    val inputXML =
+      <damd:administrative-md version="0.1">
+        <datasetState>PUBLISHED</datasetState>
+        <datasetState>PUBLISHED</datasetState>
+        <previousState>DRAFT</previousState>
+        <lastStateChange>2016-12-09T13:42:52.433+01:00</lastStateChange>
+        <depositorId>user001</depositorId>
+        <stateChangeDates>
+          <damd:stateChangeDate>
+            <fromState>DRAFT</fromState>
+            <toState>SUBMITTED</toState>
+            <changeDate>2016-12-09T13:42:52.434+01:00</changeDate>
+          </damd:stateChangeDate>
+        </stateChangeDates>
+        <groupIds/>
+        <damd:workflowData version="0.1">
+        <assigneeId>NOT_ASSIGNED</assigneeId>
+        <wfs:workflow>...</wfs:workflow>
+        </damd:workflowData>
+      </damd:administrative-md>
+
+    Transformer.validate("AMD", "datasetState", "PUBLISHED", inputXML)
+      .failed.get.getMessage shouldBe "expected AMD <datasetState> [PUBLISHED] but found [PUBLISHEDPUBLISHED]."
+  }
+
+  it should "reject an initial web-ui draft because a missing <previousState> is not implemented" in {
 
     val inputXML =
       <damd:administrative-md version="0.1">

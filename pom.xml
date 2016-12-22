@@ -28,7 +28,7 @@
     <version>1.x-SNAPSHOT</version>
     <name>update dataset metadata streams</name>
     <url>https://github.com/DANS-KNAW/easy-update-metadata-dataset</url>
-    <description>Batch-updates metadata streams of datasets in a Fedora Commons repository</description>
+    <description>Batch-updates XML streams of objects in a Fedora Commons repository.</description>
     <inceptionYear>2016</inceptionYear>
     <properties>
         <main-class>nl.knaw.dans.easy.umd.Command</main-class>

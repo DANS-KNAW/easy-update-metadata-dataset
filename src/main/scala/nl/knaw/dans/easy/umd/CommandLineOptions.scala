@@ -22,21 +22,23 @@ import com.yourmediashelf.fedora.client.FedoraCredentials
 import org.rogach.scallop._
 import org.slf4j.{Logger, LoggerFactory}
 
-class CommandLineOptions(args: Array[String] = "src/test/resources/deasy-input.csv".split(" ")) extends ScallopConf(args) {
+class CommandLineOptions(args: Array[String]) extends ScallopConf(args) {
 
   appendDefaultToDescription = true
   editBuilder(_.setHelpWidth(110))
 
   printedName = "easy-update-metadata-dataset"
+  val description = """Batch-updates XML streams of objects in a Fedora Commons repository."""
+  val synopsis = s"""$printedName <datasets.csv>"""
 
   version(s"$printedName v${Version()}")
   banner(
     s"""
-       |Batch-updates metadata streams in a Fedora Commons repository
+       |$description
        |
        |Usage:
        |
-       |$printedName <datasets.csv>
+       |$synopsis
        |
        |Options:
        |""".stripMargin)

@@ -22,26 +22,32 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class CommandLineOptionsSpec extends FlatSpec with Matchers {
 
-  def helpInfo: String = {
+  private val clo = new CommandLineOptions(Array[String]()) {
+    // avoids System.exit() in case of invalid arguments or "--help"
+    override def verify(): Unit = {}
+  }
+
+  private val helpInfo = {
     val mockedStdOut = new ByteArrayOutputStream()
     Console.withOut(mockedStdOut) {
-      new CommandLineOptions().printHelp()
+      clo.printHelp()
     }
     mockedStdOut.toString
   }
 
   "options in help info" should "be part of README.md" in {
-    val options = helpInfo.split("Options:")(1)
+    val lineSeparators = s"(${System.lineSeparator()})+"
+    val options = helpInfo.split(s"${lineSeparators}Options:$lineSeparators")(1)
+    options.trim.length shouldNot be (0)
     new File("README.md") should containTrimmed(options)
   }
 
   "synopsis in help info" should "be part of README.md" in {
-    val synopsis = helpInfo.split("Options:")(0).split("Usage:")(1)
-    new File("README.md") should containTrimmed(synopsis)
+    new File("README.md") should containTrimmed(clo.synopsis)
   }
 
-  "first banner line" should "be part of README.md and pom.xml" in {
-    val description = helpInfo.split("\n")(1)
+  "description line(s) in help info" should "be part of README.md and pom.xml" in {
+    val description = clo.description
     new File("README.md") should containTrimmed(description)
     new File("pom.xml") should containTrimmed(description)
   }

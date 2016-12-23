@@ -65,7 +65,7 @@ object Command {
     val oldLines = new PrettyPrinter(160, 2).format(oldXML).lines.toList
     val newLines = new PrettyPrinter(160, 2).format(newXML.head).lines.toList
     if (oldXML == newXML)
-      Failure(new Exception(s"could not find ${record.streamID} <${record.oldValue}>${record.oldValue}</${record.oldValue}>"))
+      Failure(new Exception(s"could not find ${record.streamID} <${record.xmlTag}>${record.oldValue}</${record.xmlTag}>"))
     else {
       log.info(s"old ${record.streamID}: ${compare(oldLines, newLines)}")
       log.info(s"new ${record.streamID}: ${compare(newLines, oldLines)}")

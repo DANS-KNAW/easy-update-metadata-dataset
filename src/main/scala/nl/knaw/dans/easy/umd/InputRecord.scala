@@ -15,10 +15,9 @@
  */
 package nl.knaw.dans.easy.umd
 
-import java.io.File
+import java.io._
 
 import org.apache.commons.csv.{CSVFormat, CSVParser, CSVRecord}
-import org.apache.commons.io.Charsets
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
@@ -43,9 +42,8 @@ object InputRecord {
     r.getRecordNumber, r.get(0), r.get(1), r.get(2), r.get(3), r.get(4)
   )
 
-  def parse(file: File): Try[Stream[InputRecord]] = Try {
-
-    val csvRecords = CSVParser.parse(file, Charsets.UTF_8, CSVFormat.RFC4180).asScala
+  def parse(reader: Reader): Try[Stream[InputRecord]] = Try{
+    val csvRecords = new CSVParser(reader, CSVFormat.RFC4180).asScala
     val actualHeader = InputRecord(csvRecords.head)
 
     if (actualHeader != expectedHeader)

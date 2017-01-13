@@ -15,10 +15,13 @@
  */
 package nl.knaw.dans.easy.umd
 
+import java.io.{File, FileInputStream}
+
 import com.yourmediashelf.fedora.client.FedoraClient
 import com.yourmediashelf.fedora.client.request.FedoraRequest
 import nl.knaw.dans.easy.umd.InputRecord.parse
 import nl.knaw.dans.easy.umd.{CommandLineOptions => cmd}
+import org.apache.tika.detect.AutoDetectReader
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.{Failure, Success, Try}
@@ -39,11 +42,27 @@ object Command {
   def run(implicit ps: Parameters): Try[Unit] = {
     FedoraRequest.setDefaultClient(new FedoraClient(ps.fedoraCredentials))
     implicit val fedora = FedoraStreams()
-    for {
-      records <- parse(ps.input)
-      _ <- records.map(update).find(_.isFailure).getOrElse(Success(Unit)) // fail fast, if an error occurs, stop updating the rest of the stream!
-    } yield ()
+    testFriendlyRun
   }
+
+  def testFriendlyRun(implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = for {
+    reader <- textReader(ps.input)
+    _ <- assertUTF8(ps.input, reader)
+    records <- parse(reader)
+    _ <- failFast(records.map(update))
+  } yield ()
+
+  // if an error occurs, stop updating the rest of the stream!
+  private def failFast(streamOfTries: Stream[Try[Unit]]) = streamOfTries.find(_.isFailure).getOrElse(Success(Unit))
+
+  def textReader(file: File): Try[AutoDetectReader] = Try {
+    new AutoDetectReader(new FileInputStream(file))
+  }
+
+  private def assertUTF8(file: File, reader: AutoDetectReader) =
+    if (reader.getCharset.toString == "UTF-8")
+      Success(Unit)
+    else Failure(new Exception(s"encoding of $file is not UTF-8 but ${reader.getCharset}"))
 
   def update(record: InputRecord)
             (implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = {
@@ -60,7 +79,7 @@ object Command {
     Failure(new Exception(s"failed to process: $record, reason: ${e.getMessage}", e))
   }
 
-  def reportChanges(record: InputRecord, oldXML: Elem, newXML: Seq[Node])
+  private def reportChanges(record: InputRecord, oldXML: Elem, newXML: Seq[Node])
                    (implicit log: Logger): Try[Unit] = {
     val oldLines = new PrettyPrinter(160, 2).format(oldXML).lines.toList
     val newLines = new PrettyPrinter(160, 2).format(newXML.head).lines.toList

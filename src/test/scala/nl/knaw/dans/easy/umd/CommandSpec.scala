@@ -15,7 +15,9 @@
  */
 package nl.knaw.dans.easy.umd
 
-import nl.knaw.dans.easy.umd.InputRecord.parse
+import java.io.File
+
+import org.apache.commons.io.FileUtils
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FlatSpec, Inside, Matchers, OneInstancePerTest}
 import org.slf4j.Logger
@@ -33,10 +35,19 @@ class CommandSpec extends FlatSpec
   private def expectOneLogInfo(message: String) = (logMock.info(_: String)) expects message once()
 
   private implicit val fedoraMock = mock[FedoraStreams]
-  private def expectOneFedoraGetXml(result: Try[Elem]) = fedoraMock.getXml _ expects(*, *) once() returning result
-  private def expectOneFedoraUpdate(failure: Try[Unit]) = fedoraMock.updateDatastream _ expects(*, *, *) once() returning failure
+  private def expectOneFedoraGetXml(triedElem: Try[Elem]) = fedoraMock.getXml _ expects(*, *) once() returning triedElem
+  private def expectFedoraUpdates(returnValue: Try[Unit], times: Int) = fedoraMock.updateDatastream _ expects(*, *, *) returning returnValue repeat times
 
-  implicit val parameters = Parameters(test = true, fedoraCredentials = null, input = null)
+  private def expectUtf8Record(record: Int, fedoraID: Int, stream: String) = {
+    expectOneLogInfo(s"new $stream:   <title>Planetoïde van issue EASY-1128</title>")
+    expectOneLogInfo(s"old $stream:   <title>Titel van de dataset</title>")
+    expectOneLogInfo(s"InputRecord($record,easy-dataset:$fedoraID,$stream,title,Titel van de dataset,Planetoïde van issue EASY-1128)")
+    expectOneFedoraGetXml(Success(
+      <someroot>
+        <title>Titel van de dataset</title> <sometag>tweeën</sometag>
+      </someroot>
+    ))
+  }
 
   "update" should "report fedora read error" in {
 
@@ -46,6 +57,8 @@ class CommandSpec extends FlatSpec
     val inputRecord = InputRecord(
       fedoraID = "easy-dataset:1", streamID = "STID", xmlTag = "TAG", newValue = "new", oldValue = "old"
     )
+    implicit val parameters = Parameters(test = true, fedoraCredentials = null, input = null)
+
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("mocked message")
@@ -61,11 +74,13 @@ class CommandSpec extends FlatSpec
     expectOneFedoraGetXml(Success(
       <someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>
     ))
-    expectOneFedoraUpdate(Failure(new Exception("mocked message")))
+    expectFedoraUpdates(returnValue = Failure(new Exception("mocked message")), times = 1)
 
     val inputRecord = InputRecord(
       fedoraID = "easy-dataset:1", streamID = "", xmlTag = "sometag", newValue = "new", oldValue = "first value"
     )
+    implicit val parameters = Parameters(test = true, fedoraCredentials = null, input = null)
+
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("mocked message")
@@ -83,46 +98,13 @@ class CommandSpec extends FlatSpec
     val inputRecord = InputRecord(
       fedoraID = "easy-dataset:1", streamID = "AMD", xmlTag = "datasetState", newValue = "new", oldValue = "first value"
     )
+    implicit val parameters = Parameters(test = true, fedoraCredentials = null, input = null)
 
     val throwable = Command.update(inputRecord).failed.get
     throwable.getCause.getMessage should include("previousState")
     throwable.getMessage shouldBe
       "failed to process: InputRecord(1,easy-dataset:1,AMD,datasetState,first value,new)" +
         ", reason: no <previousState> in AMD."
-  }
-
-  it should "preserve UTF8 characters" in {
-
-    expectOneLogInfo("new EMD:   <title>Planetoïde van issue EASY-1128</title>")
-    expectOneLogInfo("old EMD:   <title>Titel van de dataset</title>")
-    expectOneLogInfo("InputRecord(2,easy-dataset:1,EMD,title,Titel van de dataset,Planetoïde van issue EASY-1128)")
-    expectOneFedoraGetXml(Success(
-      <someroot><title>Titel van de dataset</title> <sometag>tweeën</sometag></someroot>
-    ))
-    expectOneFedoraUpdate(Success(Unit))
-
-    // reads a CSV file with UTF8 in the new value, the file can also be applied manually as explained in its comment column
-    val inputRecord = parse(new java.io.File("src/test/resources/deasy-UTF8-input.csv")).get.head
-
-    Command.update(inputRecord) shouldBe a[Success[_]]
-  }
-
-  it should "report an inconsistent plain old value" in {
-
-    expectOneLogInfo("InputRecord(1,easy-dataset:1,SOMESTREAMID,sometag,other value,new)")
-    expectOneFedoraGetXml(Success(
-      <someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>
-    ))
-
-    val inputRecord = InputRecord(
-      fedoraID = "easy-dataset:1", streamID = "SOMESTREAMID", xmlTag = "sometag", newValue = "new", oldValue = "other value"
-    )
-
-    val throwable = Command.update(inputRecord).failed.get
-    throwable.getMessage shouldBe
-      "failed to process: InputRecord(1,easy-dataset:1,SOMESTREAMID,sometag,other value,new)" +
-        ", reason: could not find SOMESTREAMID <sometag>other value</sometag>"
-
   }
 
   it should "report an inconsistent old AMD <datasetState> value" in {
@@ -135,11 +117,61 @@ class CommandSpec extends FlatSpec
     val inputRecord = InputRecord(
       fedoraID = "easy-dataset:1", streamID = "AMD", xmlTag = "datasetState", newValue = "new", oldValue = "other value"
     )
+    implicit val parameters = Parameters(test = true, fedoraCredentials = null, input = null)
 
-    val throwable = Command.update(inputRecord).failed.get
-    throwable.getMessage shouldBe
+    Command.update(inputRecord).failed.get.getMessage shouldBe
       "failed to process: InputRecord(1,easy-dataset:1,AMD,datasetState,other value,new)" +
         ", reason: expected AMD <datasetState> [other value] but found [first value]."
+  }
 
+  "testFriendlyRun" should "preserve UTF8 characters of CSV" in {
+
+    expectUtf8Record(record = 2, fedoraID = 1, stream = "EMD")
+    expectUtf8Record(record = 3, fedoraID = 1, stream = "DC")
+    expectUtf8Record(record = 4, fedoraID = 2, stream = "EMD")
+    expectUtf8Record(record = 5, fedoraID = 2, stream = "DC")
+    expectFedoraUpdates(returnValue = Success(Unit), times = 4)
+
+    // CSV file with UTF8 in the new value, the file can also be applied manually as explained in its comment column
+    val file = new File("src/test/resources/deasy-UTF8-input.csv")
+    implicit val ps = Parameters(test = true,fedoraCredentials = null, input = file)
+    Command.testFriendlyRun
+  }
+
+  it should "update 1 record, then abort on an inconsistent plain old value" in {
+    // "plain value" as opposed to "AMD <datasetState> value" which is tested with the update method
+
+    expectUtf8Record(record = 2, fedoraID = 1, stream = "EMD")
+    expectOneLogInfo("InputRecord(3,easy-dataset:1,DC,title,Titel van de dataset,Planetoïde van issue EASY-1128)")
+    expectOneFedoraGetXml(Success(
+      <someroot><title>Verkeerde titel van de dataset</title> <sometag>tweeën</sometag></someroot>
+    ))
+    expectFedoraUpdates(returnValue = Success(Unit), times = 1)
+
+    val file = new File("src/test/resources/deasy-UTF8-input.csv")
+    implicit val ps = Parameters(test = true,fedoraCredentials = null, input = file)
+    Command.testFriendlyRun.failed.get.getMessage shouldBe
+      "failed to process: InputRecord(3,easy-dataset:1,DC,title,Titel van de dataset,Planetoïde van issue EASY-1128)" +
+        ", reason: could not find DC <title>Titel van de dataset</title>"
+  }
+
+  it should "reject CSV with other encoding than UTF-8" in {
+
+    val file = new File("src/test/resources/mac-encoded.txt")
+    implicit val ps = Parameters(test = true,fedoraCredentials = null, input = file)
+    Command.testFriendlyRun.failed.get.getMessage shouldBe
+      "encoding of src/test/resources/mac-encoded.txt is not UTF-8 but KOI8-R"
+  }
+
+  "textReader" should "not try to recover from not expected encoding" in {
+
+    // saved "ÈÀŒØ" with Mac's text editor with "Western (Mac OS Roman)"
+    val file = new File("src/test/resources/mac-encoded.txt")
+
+    val reader = Command.textReader(file).get
+    reader.getCharset.toString shouldBe "KOI8-R"
+    reader.readLine() shouldBe "Икн╞"
+    FileUtils.readFileToString(file,"KOI8-R") shouldBe "Икн╞"
+    FileUtils.readFileToString(file,"UTF-8") shouldBe "��ί"
   }
 }

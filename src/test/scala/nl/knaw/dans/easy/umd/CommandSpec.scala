@@ -160,7 +160,7 @@ class CommandSpec extends FlatSpec
     val file = new File("src/test/resources/mac-encoded.txt")
     implicit val ps = Parameters(test = true,fedoraCredentials = null, input = file)
     Command.testFriendlyRun.failed.get.getMessage shouldBe
-      "encoding of src/test/resources/mac-encoded.txt is not UTF-8 but KOI8-R"
+      "requirement failed: encoding of src/test/resources/mac-encoded.txt must be UTF-8 but is KOI8-R"
   }
 
   "textReader" should "not try to recover from not expected encoding" in {

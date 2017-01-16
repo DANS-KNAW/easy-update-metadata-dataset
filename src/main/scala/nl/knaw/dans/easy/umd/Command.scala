@@ -47,22 +47,21 @@ object Command {
 
   def testFriendlyRun(implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = for {
     reader <- textReader(ps.input)
-    _ <- assertUTF8(ps.input, reader)
+    _ <- requireUTF8(ps.input, reader)
     records <- parse(reader)
     _ <- failFast(records.map(update))
   } yield ()
 
-  // if an error occurs, stop updating the rest of the stream!
+  // if an error occurs, stop processing the rest of the stream!
   private def failFast(streamOfTries: Stream[Try[Unit]]) = streamOfTries.find(_.isFailure).getOrElse(Success(Unit))
 
   def textReader(file: File): Try[AutoDetectReader] = Try {
     new AutoDetectReader(new FileInputStream(file))
   }
 
-  private def assertUTF8(file: File, reader: AutoDetectReader) =
-    if (reader.getCharset.toString == "UTF-8")
-      Success(Unit)
-    else Failure(new Exception(s"encoding of $file is not UTF-8 but ${reader.getCharset}"))
+  private def requireUTF8(file: File, reader: AutoDetectReader) = Try {
+    require(reader.getCharset.toString == "UTF-8", s"encoding of $file must be UTF-8 but is ${reader.getCharset}")
+  }
 
   def update(record: InputRecord)
             (implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = {

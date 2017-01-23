@@ -15,25 +15,64 @@
  */
 package nl.knaw.dans.easy.umd
 
-import java.io.File
+import java.io._
 
 import org.apache.commons.csv.{CSVFormat, CSVParser, CSVRecord}
-import org.apache.commons.io.Charsets
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+import org.slf4j.{Logger, LoggerFactory}
 
+import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.util.Try
 
-case class InputRecord(fedoraPid: String, newValue:String)
+/** Defaults to the mandatory header line in the CSV file. */
+case class InputRecord(recordNr: Long = 1,
+                       fedoraID: String = "FEDORA_ID",
+                       streamID: String = "STREAM_ID",
+                       xmlTag: String = "XML_TAG",
+                       oldValue: String = "OLD_VALUE",
+                       newValue: String = "NEW_VALUE")
 
 object InputRecord {
-  def apply(csvRecord: CSVRecord) = new InputRecord(csvRecord.get(0), csvRecord.get(1))
 
-  def parse(file: File): Try[Stream[InputRecord]] = Try {
-    CSVParser.parse(file, Charsets.UTF_8, CSVFormat.RFC4180)
-      .asScala
-      .drop(1) // Ingore the header
+  private val expectedHeader = new InputRecord()
+  private val nrOfColumns = expectedHeader.productArity - 1
+
+  val log: Logger = LoggerFactory.getLogger(getClass)
+
+  def apply(r: CSVRecord) = new InputRecord(
+    r.getRecordNumber, r.get(0), r.get(1), r.get(2), r.get(3), r.get(4)
+  )
+
+  def parse(reader: Reader): Try[Stream[InputRecord]] = Try{
+    val csvRecords = new CSVParser(reader, CSVFormat.RFC4180).asScala
+    val actualHeader = InputRecord(csvRecords.head)
+
+    if (actualHeader != expectedHeader)
+      throw new Exception(s"header line should be: $expectedHeader but was $actualHeader")
+    else csvRecords
       .toStream
-      .withFilter(_.asScala.size > 1) // Ignore empty or incomplete lines
-      .map(InputRecord(_))
+      .withFilter(isNotBlank)
+      .map(convert)
+  }
+
+  private def isNotBlank(csvRecord: CSVRecord): Boolean = {
+    // calling withIgnoreEmptyLines on the CSVFormat builder would spoil the line numbers
+    csvRecord.size != 1 && csvRecord.asScala.head.trim != ""
+  }
+
+  private def convert(csvRecord: CSVRecord): InputRecord = {
+
+    val fields = csvRecord.asScala.seq
+
+    def inputReference = s"line ${csvRecord.getRecordNumber}: ${fields.mkString(",")}"
+
+    if (csvRecord.size < nrOfColumns || fields.exists(_.trim.isEmpty))
+      throw new Exception(s"incomplete $inputReference")
+
+    val record = InputRecord(csvRecord)
+
+    if (record.oldValue == record.newValue)
+      throw new Exception(s"old value equals new value at $inputReference")
+
+    record
   }
 }

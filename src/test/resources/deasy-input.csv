@@ -1,2 +1,5 @@
-DATASET,NEW_VALUE
-easy-dataset:2,OPEN_ACCESS
+FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE, based on https://github.com/DANS-KNAW/easy-dtap/tree/v3.2-RC-3/provisioning/roles/easy_test_datasets
+easy-dataset:1,AMD,datasetState,SUBMITTED,PUBLISHED
+easy-dataset:2,AMD,datasetState,DRAFT,SUBMITTED
+easy-dataset:3,AMD,datasetState,DRAFT,SUBMITTED, the last to change
+easy-dataset:4,AMD,datasetState,HISTORY,ANY_DISCIPLINE

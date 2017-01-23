@@ -22,14 +22,10 @@ import com.yourmediashelf.fedora.client.FedoraCredentials
 
 package object umd {
 
-  case class Parameters(streamID: String,
-                        tag: String,
-                        test: Boolean,
+  case class Parameters(test: Boolean,
                         fedoraCredentials: FedoraCredentials,
                         input: File
-                       ) {
-    override def toString: String = s"streamID=$streamID; tag=$tag; test=$test, input=$input; fedoraCredentials = $fedoraCredentials"
-  }
+                       )
 
   object Version {
     def apply(): String = {

@@ -15,59 +15,88 @@
  */
 package nl.knaw.dans.easy.umd
 
+import java.io.{File, FileInputStream}
+
 import com.yourmediashelf.fedora.client.FedoraClient
 import com.yourmediashelf.fedora.client.request.FedoraRequest
 import nl.knaw.dans.easy.umd.InputRecord.parse
 import nl.knaw.dans.easy.umd.{CommandLineOptions => cmd}
-import org.slf4j.LoggerFactory
+import org.apache.tika.detect.AutoDetectReader
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.{Failure, Success, Try}
-import scala.xml.transform.{RewriteRule, RuleTransformer}
-import scala.xml.{Elem, Node, Text}
+import scala.xml.{Elem, Node, PrettyPrinter}
 
 object Command {
-  val log = LoggerFactory.getLogger(getClass)
+  implicit val log: Logger = LoggerFactory.getLogger(getClass)
 
   def main(args: Array[String]): Unit = {
-    log.debug("Starting command line interface")
     val ps = cmd.parse(args)
-    FedoraRequest.setDefaultClient(new FedoraClient(ps.fedoraCredentials))
+    log.info(s"Started $ps")
     run(ps) match {
-      case Success((count)) => log.info(s"Changed $count ${ps.streamID} streams.")
-      case Failure(e) => log.error("failed", e)
+      case Success(_) => log.info(s"Finished $ps")
+      case Failure(e) => log.error(s"Failed $ps", e)
     }
   }
 
   def run(implicit ps: Parameters): Try[Unit] = {
-    for {
-      records <- parse(ps.input)
-      _ <- records.map(update).find(_.isFailure).getOrElse(Success(())) // fail fast, if an error occurs, stop updating the rest of the stream!
-    } yield records.size
+    FedoraRequest.setDefaultClient(new FedoraClient(ps.fedoraCredentials))
+    implicit val fedora = FedoraStreams()
+    testFriendlyRun
   }
 
-  def update(record: InputRecord)(implicit ps: Parameters): Try[Unit] = {
-    log.info(s"${record.fedoraPid}, ${record.newValue}")
-    val fedora = FedoraStreams()
+  def testFriendlyRun(implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = for {
+    reader <- textReader(ps.input)
+    _ <- requireUTF8(ps.input, reader)
+    records <- parse(reader)
+    _ <- failFast(records.map(update))
+  } yield ()
+
+  // if an error occurs, stop processing the rest of the stream!
+  private def failFast(streamOfTries: Stream[Try[Unit]]) = streamOfTries.find(_.isFailure).getOrElse(Success(Unit))
+
+  def textReader(file: File): Try[AutoDetectReader] = Try {
+    new AutoDetectReader(new FileInputStream(file))
+  }
+
+  private def requireUTF8(file: File, reader: AutoDetectReader) = Try {
+    require(reader.getCharset.toString == "UTF-8", s"encoding of $file must be UTF-8 but is ${reader.getCharset}")
+  }
+
+  def update(record: InputRecord)
+            (implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = {
+    log.info(record.toString)
     for {
-      oldXML <- fedora.getXml(record.fedoraPid, ps.streamID)
-      newXML = transformer(ps.tag, record.newValue).transform(oldXML)
-      oldLines = oldXML.toString().lines.toList
-      newLines = newXML.toString().lines.toList
-      _ = log.info(s"old ${ps.streamID} ${oldLines.diff(newLines)}")
-      _ = log.info(s"new ${ps.streamID} ${newLines.diff(oldLines)}")
-      _ <- if (oldXML != newXML) fedora.updateDatastream(record.fedoraPid, ps.streamID, newXML.toString()) else Success(())
+      oldXML <- fedora.getXml(record.fedoraID, record.streamID)
+      _ <- Transformer.validate(record.streamID, record.xmlTag, record.oldValue, oldXML)
+      transformer = Transformer(record.streamID, record.xmlTag, record.oldValue, record.newValue)
+      newXML = transformer.transform(oldXML)
+      _ <- reportChanges(record, oldXML, newXML)
+      _ <- fedora.updateDatastream(record.fedoraID, record.streamID, newXML.toString())
     } yield ()
-  }.recoverWith{ case e =>
-      Failure(new Exception(s"failed to process: ${record.fedoraPid},${record.newValue}", e))
+  }.recoverWith { case e =>
+    Failure(new Exception(s"failed to process: $record, reason: ${e.getMessage}", e))
   }
 
-  def transformer(label: String, newValue: String) = {
-    new RuleTransformer(new RewriteRule {
-      override def transform(n: Node): Seq[Node] = n match {
-        case Elem(prefix, `label`, attribs, scope, _) =>
-          Elem(prefix, label, attribs, scope, false, Text(newValue))
-        case other => other
-      }
-    })
+  private def reportChanges(record: InputRecord, oldXML: Elem, newXML: Seq[Node])
+                   (implicit log: Logger): Try[Unit] = {
+    val oldLines = new PrettyPrinter(160, 2).format(oldXML).lines.toList
+    val newLines = new PrettyPrinter(160, 2).format(newXML.head).lines.toList
+    if (oldXML == newXML)
+      Failure(new Exception(s"could not find ${record.streamID} <${record.xmlTag}>${record.oldValue}</${record.xmlTag}>"))
+    else {
+      log.info(s"old ${record.streamID}: ${compare(oldLines, newLines)}")
+      log.info(s"new ${record.streamID}: ${compare(newLines, oldLines)}")
+      Success(Unit)
+    }
+  }
+
+  /** @return lines of xs not in ys */
+  private def compare(xs: List[String], ys: List[String]) = {
+    val diff = xs.diff(ys)
+    if (diff.size <= 1)
+      diff.mkString("", "", "")
+    else
+      diff.mkString("\n\t", "\n\t", "")
   }
 }

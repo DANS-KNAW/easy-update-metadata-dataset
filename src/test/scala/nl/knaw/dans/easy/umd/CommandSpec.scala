@@ -194,24 +194,13 @@ class CommandSpec extends FlatSpec
     reader.readLine shouldBe "created with vi"
   }
 
-  it should "accept vi file with Dutch accent" in {
+  it should "accept open office file with Dutch accent" in {
 
-    val file = new File("src/test/resources/vi-accent.txt")
+    val file = new File("src/test/resources/open-office-utf8.csv")
 
     val reader = Command.textReader(file).get
-    reader.getCharset shouldBeAcceptedCharset "ISO-8859-1"
-    reader.readLine shouldBe "reëel accent"
-  }
-
-  it should "accept vi file with euro sign" in {
-
-    val file = new File("src/test/resources/vi-euro.txt")
-
-    // https://en.wikipedia.org/wiki/ISO/IEC_8859
-    // would rather expect 8859-15
-    val reader = Command.textReader(file).get
-    reader.getCharset shouldBeAcceptedCharset "ISO-8859-1"
-    reader.readLine shouldBe "euro: €"
+    reader.getCharset shouldBeAcceptedCharset "UTF-8"
+    reader.readLine shouldBe "abc,def,reëel accent"
   }
 
   implicit class CS (actual: Charset) {

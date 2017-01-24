@@ -59,8 +59,14 @@ object Command {
     new AutoDetectReader(new FileInputStream(file))
   }
 
+  val acceptedCharsets = Set("UTF-8", "ISO-8859-1")
+
   private def requireUTF8(file: File, reader: AutoDetectReader) = Try {
-    require(reader.getCharset.toString == "UTF-8", s"encoding of $file must be UTF-8 but is ${reader.getCharset}")
+    val charSet = reader.getCharset.displayName
+    require(
+      acceptedCharsets.contains(charSet),
+      s"encoding of $file must be one of [${acceptedCharsets.mkString(", ")}] but is $charSet"
+    )
   }
 
   def update(record: InputRecord)

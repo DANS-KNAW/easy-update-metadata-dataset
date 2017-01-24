@@ -203,7 +203,9 @@ class CommandSpec extends FlatSpec
     reader.readLine shouldBe "abc,def,reëel accent"
   }
 
-  implicit class CS (actual: Charset) {
+  implicit class RichCharset (val actual: Charset) {
+    // with 'extends AnyVal' it can not be a member of another class
+    // moving it to a package class would be overkill
 
     def shouldBeAcceptedCharset(expected: String): Unit = {
       actual.displayName shouldBe expected

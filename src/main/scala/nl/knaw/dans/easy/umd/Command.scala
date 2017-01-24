@@ -47,7 +47,7 @@ object Command {
 
   def testFriendlyRun(implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = for {
     reader <- textReader(ps.input)
-    _ <- requireUTF8(ps.input, reader)
+    _ <- hasAcceptedCharset(ps.input, reader)
     records <- parse(reader)
     _ <- failFast(records.map(update))
   } yield ()
@@ -61,7 +61,7 @@ object Command {
 
   val acceptedCharsets = Set("UTF-8", "ISO-8859-1")
 
-  private def requireUTF8(file: File, reader: AutoDetectReader) = Try {
+  private def hasAcceptedCharset(file: File, reader: AutoDetectReader) = Try {
     val charSet = reader.getCharset.displayName
     require(
       acceptedCharsets.contains(charSet),

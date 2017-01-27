@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.umd
 
 import java.io.File
-import java.nio.charset.Charset
 
 import org.apache.commons.io.FileUtils
 import org.scalamock.scalatest.MockFactory
@@ -156,65 +155,26 @@ class CommandSpec extends FlatSpec
         ", reason: could not find DC <title>Titel van de dataset</title>"
   }
 
-  it should "reject CSV with other encoding than UTF-8" in {
+  it should "reject CSV when UTF-8 decoding finds invalid characters" in {
 
-    val file = new File("src/test/resources/KOI8-R.txt")
+    val file = new File("src/test/resources/macroman.txt")
     implicit val ps = Parameters(test = true,fedoraCredentials = null, input = file)
     Command.testFriendlyRun.failed.get.getMessage shouldBe
-      "requirement failed: encoding of src/test/resources/KOI8-R.txt must be one of [UTF-8, ISO-8859-1] but is KOI8-R"
+      "java.nio.charset.MalformedInputException: Input length = 1"
   }
 
-  "textReader" should "not try to recover from not expected encoding" in {
+  "textReader" should "not try to guess the encoding" in {
 
-    // saved "ÈÀŒØ" with Mac's text editor with "Western (Mac OS Roman)"
-    val file = new File("src/test/resources/KOI8-R.txt")
+    // saved with Mac's text editor with "Western (Mac OS Roman)"
+    val file = new File("src/test/resources/macroman.txt")
+    FileUtils.readFileToString(file,"x-MacRoman") shouldBe "ÈÀŒØ"
 
-    val reader = Command.textReader(file).get
-    reader.getCharset shouldBeRejectedCharset "KOI8-R"
-    reader.readLine shouldBe "Икн╞"
+    // guessed by tika library in commit a3dae76
     FileUtils.readFileToString(file,"KOI8-R") shouldBe "Икн╞"
+
+    // guessed by system command: file --mime-encoding src/test/resources/*
+    FileUtils.readFileToString(file,"iso-8859-1") shouldBe "éËÎ¯"
+
     FileUtils.readFileToString(file,"UTF-8") shouldBe "��ί"
-  }
-
-  it should "accept plain ascii" in {
-
-    val file = new File("src/test/resources/ISO-8859-1.txt")
-
-    val reader = Command.textReader(file).get
-    reader.getCharset shouldBeAcceptedCharset "ISO-8859-1"
-    reader.readLine shouldBe "created with intelij on a mac"
-  }
-
-  it should "accept vi file with plain ascii" in {
-
-    val file = new File("src/test/resources/ascii.txt")
-
-    val reader = Command.textReader(file).get
-    reader.getCharset shouldBeAcceptedCharset "ISO-8859-1"
-    reader.readLine shouldBe "created with vi"
-  }
-
-  it should "accept open office file with Dutch accent" in {
-
-    val file = new File("src/test/resources/open-office-utf8.csv")
-
-    val reader = Command.textReader(file).get
-    reader.getCharset shouldBeAcceptedCharset "UTF-8"
-    reader.readLine shouldBe "abc,def,reëel accent"
-  }
-
-  implicit class RichCharset (val actual: Charset) {
-    // with 'extends AnyVal' it can not be a member of another class
-    // moving it to a package class would be overkill
-
-    def shouldBeAcceptedCharset(expected: String): Unit = {
-      actual.displayName shouldBe expected
-      Command.acceptedCharsets.contains(expected) shouldBe true
-    }
-
-    def shouldBeRejectedCharset(expected: String): Unit = {
-      actual.displayName shouldBe expected
-      Command.acceptedCharsets.contains(expected) shouldBe false
-    }
   }
 }

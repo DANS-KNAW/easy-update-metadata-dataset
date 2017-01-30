@@ -63,7 +63,7 @@ object Command {
   }
 
 
-  private def update(record: InputRecord)
+  def update(record: InputRecord)
             (implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = {
     log.info(record.toString)
     for {

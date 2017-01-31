@@ -155,23 +155,26 @@ class CommandSpec extends FlatSpec
         ", reason: could not find DC <title>Titel van de dataset</title>"
   }
 
-  it should "reject CSV with other encoding than UTF-8" in {
+  it should "reject CSV when UTF-8 decoding finds invalid characters" in {
 
-    val file = new File("src/test/resources/mac-encoded.txt")
+    val file = new File("src/test/resources/macroman.txt")
     implicit val ps = Parameters(test = true,fedoraCredentials = null, input = file)
     Command.testFriendlyRun.failed.get.getMessage shouldBe
-      "requirement failed: encoding of src/test/resources/mac-encoded.txt must be UTF-8 but is KOI8-R"
+      "java.nio.charset.MalformedInputException: Input length = 1"
   }
 
-  "textReader" should "not try to recover from not expected encoding" in {
+  "textReader" should "not try to guess the encoding" in {
 
-    // saved "ÈÀŒØ" with Mac's text editor with "Western (Mac OS Roman)"
-    val file = new File("src/test/resources/mac-encoded.txt")
+    // saved with Mac's text editor with "Western (Mac OS Roman)"
+    val file = new File("src/test/resources/macroman.txt")
+    FileUtils.readFileToString(file,"x-MacRoman") shouldBe "ÈÀŒØ"
 
-    val reader = Command.textReader(file).get
-    reader.getCharset.toString shouldBe "KOI8-R"
-    reader.readLine() shouldBe "Икн╞"
+    // guessed by tika library in commit a3dae76
     FileUtils.readFileToString(file,"KOI8-R") shouldBe "Икн╞"
+
+    // guessed by system command: file --mime-encoding src/test/resources/*
+    FileUtils.readFileToString(file,"iso-8859-1") shouldBe "éËÎ¯"
+
     FileUtils.readFileToString(file,"UTF-8") shouldBe "��ί"
   }
 }

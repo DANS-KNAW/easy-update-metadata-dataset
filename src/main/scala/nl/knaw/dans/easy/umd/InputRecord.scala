@@ -39,7 +39,12 @@ object InputRecord {
   val log: Logger = LoggerFactory.getLogger(getClass)
 
   def apply(r: CSVRecord) = new InputRecord(
-    r.getRecordNumber, r.get(0), r.get(1), r.get(2), r.get(3), r.get(4)
+    r.getRecordNumber,
+    fedoraID = r.get(0).trim,
+    streamID = r.get(1).trim,
+    xmlTag = r.get(2).trim,
+    oldValue = r.get(3).trim,
+    newValue = r.get(4).trim
   )
 
   def parse(reader: Reader): Try[Stream[InputRecord]] = Try{

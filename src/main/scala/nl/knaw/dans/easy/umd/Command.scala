@@ -15,15 +15,17 @@
  */
 package nl.knaw.dans.easy.umd
 
-import java.io.{File, FileInputStream}
+import java.io.{File, FileInputStream, Reader}
+import java.nio.charset.Charset
+import java.nio.charset.CodingErrorAction.REPORT
 
 import com.yourmediashelf.fedora.client.FedoraClient
 import com.yourmediashelf.fedora.client.request.FedoraRequest
 import nl.knaw.dans.easy.umd.InputRecord.parse
 import nl.knaw.dans.easy.umd.{CommandLineOptions => cmd}
-import org.apache.tika.detect.AutoDetectReader
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.io.Source.fromInputStream
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, Node, PrettyPrinter}
 
@@ -47,7 +49,6 @@ object Command {
 
   def testFriendlyRun(implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = for {
     reader <- textReader(ps.input)
-    _ <- requireUTF8(ps.input, reader)
     records <- parse(reader)
     _ <- failFast(records.map(update))
   } yield ()
@@ -55,13 +56,12 @@ object Command {
   // if an error occurs, stop processing the rest of the stream!
   private def failFast(streamOfTries: Stream[Try[Unit]]) = streamOfTries.find(_.isFailure).getOrElse(Success(Unit))
 
-  def textReader(file: File): Try[AutoDetectReader] = Try {
-    new AutoDetectReader(new FileInputStream(file))
+  def textReader(file: File): Try[Reader] = Try {
+    val decoder = Charset.forName("UTF-8").newDecoder()
+    decoder.onMalformedInput(REPORT)
+    fromInputStream(new FileInputStream(file))(decoder).reader()
   }
 
-  private def requireUTF8(file: File, reader: AutoDetectReader) = Try {
-    require(reader.getCharset.toString == "UTF-8", s"encoding of $file must be UTF-8 but is ${reader.getCharset}")
-  }
 
   def update(record: InputRecord)
             (implicit ps: Parameters, fedora: FedoraStreams, log: Logger): Try[Unit] = {

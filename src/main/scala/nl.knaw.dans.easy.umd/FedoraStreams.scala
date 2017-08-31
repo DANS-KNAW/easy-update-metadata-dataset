@@ -30,7 +30,7 @@ trait FedoraStreams {
   def getXml(pid: String, streamId: String): Try[Elem]
 }
 
-abstract class AbstractFedoraFedoraStreams(timeout: Long = 1000L) extends FedoraStreams with DebugEnhancedLogging {
+abstract class AbstractFedoraFedoraStreams(timeout: Long = 1000L, fedoraCredentials: FedoraCredentials) extends FedoraStreams with DebugEnhancedLogging {
 
   def updateDatastream(pid: String, streamId: String, content: String): Try[Unit] = {
     logger.info(s"updating $pid/$streamId")
@@ -38,22 +38,24 @@ abstract class AbstractFedoraFedoraStreams(timeout: Long = 1000L) extends Fedora
     executeRequest(pid, streamId, request)
   }
 
-  def getXml(pid: String, streamId: String): Try[Elem] = Try(
-    managed(FedoraClient.getDatastreamDissemination(pid, streamId).execute())
-      .acquireAndGet(fedoraResponse => XML.load(fedoraResponse.getEntityInputStream))
-  )
+  def getXml(pid: String, streamId: String): Try[Elem] = {
+    managed(FedoraClient.getDatastreamDissemination(pid, streamId).execute(new FedoraClient(fedoraCredentials)))
+      .flatMap(response => managed(response.getEntityInputStream))
+      .map(XML.load)
+      .tried
+  }
 
   def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]): Try[Unit]
 }
 
-class TestFedoraStreams extends AbstractFedoraFedoraStreams {
-  def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]): Try[Unit] = {
-    Success(logger.info(s"test-mode: skipping request for $pid/$streamId"))
+class TestFedoraStreams(fedoraCredentials: FedoraCredentials) extends AbstractFedoraFedoraStreams(fedoraCredentials = fedoraCredentials) {
+  override def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]): Try[Unit] = Try {
+    logger.info(s"test-mode: skipping request for $pid/$streamId")
   }
 }
 
-class FedoraFedoraStreams(timeout: Long = 1000L, fedoraCredentials: FedoraCredentials) extends AbstractFedoraFedoraStreams {
-  def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]): Try[Unit] = {
+class FedoraFedoraStreams(timeout: Long = 1000L, fedoraCredentials: FedoraCredentials) extends AbstractFedoraFedoraStreams(fedoraCredentials = fedoraCredentials) {
+  override def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]): Try[Unit] = {
     logger.info(s"executing request for $pid/$streamId")
 
     managed(request.execute(new FedoraClient(fedoraCredentials)))
@@ -71,7 +73,7 @@ class FedoraFedoraStreams(timeout: Long = 1000L, fedoraCredentials: FedoraCreden
 object FedoraStreams {
 
   def apply(timeout: Long = 1000L, fedoraCredentials: FedoraCredentials)(implicit parameters: Parameters): FedoraStreams = {
-    if (parameters.test) new TestFedoraStreams
+    if (parameters.test) new TestFedoraStreams(fedoraCredentials)
     else new FedoraFedoraStreams(timeout, fedoraCredentials)
   }
 }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,12 +25,9 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 object Transformer {
 
   def apply(streamID: String, tag: String, oldValue: String, newValue: String): RuleTransformer = {
-
     (streamID, tag) match {
-      case ("AMD", "datasetState") =>
-        datasetStateTransformer(oldValue, newValue)
-      case _ =>
-        plainTransformer(tag, oldValue, newValue)
+      case ("AMD", "datasetState") => datasetStateTransformer(oldValue, newValue)
+      case _ => plainTransformer(tag, oldValue, newValue)
     }
   }
 
@@ -39,27 +36,24 @@ object Transformer {
       case ("AMD", "datasetState", _, "") =>
         Failure(new NotImplementedException("no <previousState> in AMD."))
       case ("AMD", "datasetState", `expectedOldValue`, _) =>
-        Success(Unit)
+        Success(())
       case ("AMD", "datasetState", actualOldValue, _) =>
         Failure(new NotImplementedException(s"expected AMD <datasetState> [$expectedOldValue] but found [$actualOldValue]."))
       case _ =>
-        Success(Unit)
+        Success(())
     }
   }
 
   private def plainTransformer(label: String, oldValue: String, newValue: String): RuleTransformer =
-
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
         case Elem(prefix, `label`, attribs, scope, _) if n.text == oldValue =>
           Elem(prefix, label, attribs, scope, false, Text(newValue))
-        case other =>
-          other
+        case other => other
       }
     })
 
   private def datasetStateTransformer(oldState: String, newState: String): RuleTransformer = {
-
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
         case Elem(prefix, "datasetState", attribs, scope, _) =>
@@ -70,8 +64,7 @@ object Transformer {
           Elem(prefix, "lastStateChange", attribs, scope, false, Text(DateTime.now().toString))
         case Elem(prefix, "stateChangeDates", attribs, scope, children@_*) =>
           Elem(prefix, "stateChangeDates", attribs, scope, false, children ++ newChangeDate(oldState, newState): _*)
-        case other =>
-          other
+        case other => other
       }
     })
   }

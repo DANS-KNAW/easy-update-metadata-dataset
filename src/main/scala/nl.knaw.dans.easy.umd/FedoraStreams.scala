@@ -15,14 +15,13 @@
  */
 package nl.knaw.dans.easy.umd
 
-import com.yourmediashelf.fedora.client.FedoraClient
 import com.yourmediashelf.fedora.client.request.FedoraRequest
-import nl.knaw.dans.easy.umd.FedoraStreams.log
-import org.slf4j.{Logger, LoggerFactory}
+import com.yourmediashelf.fedora.client.{ FedoraClient, FedoraCredentials }
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource._
 
-import scala.util.{Failure, Success, Try}
-import scala.xml.{Elem, XML}
+import scala.util.{ Failure, Success, Try }
+import scala.xml.{ Elem, XML }
 
 trait FedoraStreams {
 
@@ -31,10 +30,10 @@ trait FedoraStreams {
   def getXml(pid: String, streamId: String): Try[Elem]
 }
 
-abstract class AbstractFedoraFedoraStreams(timeout: Long = 1000L) extends FedoraStreams {
+abstract class AbstractFedoraFedoraStreams(timeout: Long = 1000L) extends FedoraStreams with DebugEnhancedLogging {
 
   def updateDatastream(pid: String, streamId: String, content: String): Try[Unit] = {
-    log.info(s"updating $pid/$streamId")
+    logger.info(s"updating $pid/$streamId")
     val request = FedoraClient.modifyDatastream(pid, streamId).content(content)
     executeRequest(pid, streamId, request)
   }
@@ -48,28 +47,31 @@ abstract class AbstractFedoraFedoraStreams(timeout: Long = 1000L) extends Fedora
 }
 
 class TestFedoraStreams extends AbstractFedoraFedoraStreams {
-  def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]) =
-    Success(log.info(s"test-mode: skipping request for $pid/$streamId"))
+  def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]): Try[Unit] = {
+    Success(logger.info(s"test-mode: skipping request for $pid/$streamId"))
+  }
 }
 
-class FedoraFedoraStreams(timeout: Long = 1000L) extends AbstractFedoraFedoraStreams {
+class FedoraFedoraStreams(timeout: Long = 1000L, fedoraCredentials: FedoraCredentials) extends AbstractFedoraFedoraStreams {
   def executeRequest[T](pid: String, streamId: String, request: FedoraRequest[T]): Try[Unit] = {
-    log.info(s"executing request for $pid/$streamId")
-    managed(request.execute())
-      .acquireAndGet(_.getStatus match {
-        case 200 => log.info(s"saved $pid/$streamId")
-          Success(Unit)
-        case status =>
-          Failure(new IllegalStateException(s"got status $status"))
+    logger.info(s"executing request for $pid/$streamId")
+
+    managed(request.execute(new FedoraClient(fedoraCredentials)))
+      .map(_.getStatus match {
+        case 200 =>
+          logger.info(s"saved $pid/$streamId")
+          Success(())
+        case status => Failure(new IllegalStateException(s"got status $status"))
       })
+      .tried
+      .flatten
   }
 }
 
 object FedoraStreams {
 
-  val log: Logger = LoggerFactory.getLogger(getClass)
-
-  def apply(timeout: Long = 1000L)(implicit parameters: Parameters): FedoraStreams =
+  def apply(timeout: Long = 1000L, fedoraCredentials: FedoraCredentials)(implicit parameters: Parameters): FedoraStreams = {
     if (parameters.test) new TestFedoraStreams
-    else new FedoraFedoraStreams(timeout)
+    else new FedoraFedoraStreams(timeout, fedoraCredentials)
+  }
 }

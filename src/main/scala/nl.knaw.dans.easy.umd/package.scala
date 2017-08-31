@@ -22,16 +22,11 @@ import com.yourmediashelf.fedora.client.FedoraCredentials
 
 package object umd {
 
-  case class Parameters(test: Boolean,
-                        fedoraCredentials: FedoraCredentials,
-                        input: File
-                       )
-
-  object Version {
-    def apply(): String = {
-      val props = new Properties()
-      props.load(getClass.getResourceAsStream("/Version.properties"))
-      props.getProperty("application.version")
+  case class Parameters(test: Boolean, fedoraCredentials: FedoraCredentials, input: File) {
+    override def toString: String = {
+      s"Metadata-Dataset.Settings(doUpdate = ${!test}, " +
+        s"Fedora(${ fedoraCredentials.getBaseUrl }, ${ fedoraCredentials.getUsername }, ****), " +
+        s"input file = $input)"
     }
   }
 }

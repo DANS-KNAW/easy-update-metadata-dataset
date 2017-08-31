@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,14 +15,24 @@
  */
 package nl.knaw.dans.easy.umd
 
-import java.io.{ByteArrayOutputStream, File}
+import java.io.{ ByteArrayOutputStream, File }
+import java.nio.file.Paths
 
 import nl.knaw.dans.easy.umd.CustomMatchers._
-import org.scalatest.{FlatSpec, Matchers}
+import org.apache.commons.configuration.PropertiesConfiguration
+import org.scalatest.{ FlatSpec, Matchers }
 
 class CommandLineOptionsSpec extends FlatSpec with Matchers {
+  private val resourceDirString: String = Paths.get(getClass.getResource("/").toURI).toAbsolutePath.toString
 
-  private val clo = new CommandLineOptions(Array[String]()) {
+  private val mockedConfiguration = new Configuration("version x.y.z", new PropertiesConfiguration() {
+    setDelimiterParsingDisabled(true)
+    load(Paths.get(resourceDirString + "/debug-config", "application.properties").toFile)
+  })
+
+  val mockedArgs = Array.empty[String]
+
+  private val clo = new CommandLineOptions(mockedArgs, mockedConfiguration) {
     // avoids System.exit() in case of invalid arguments or "--help"
     override def verify(): Unit = {}
   }
@@ -36,9 +46,9 @@ class CommandLineOptionsSpec extends FlatSpec with Matchers {
   }
 
   "options in help info" should "be part of README.md" in {
-    val lineSeparators = s"(${System.lineSeparator()})+"
-    val options = helpInfo.split(s"${lineSeparators}Options:$lineSeparators")(1)
-    options.trim.length shouldNot be (0)
+    val lineSeparators = s"(${ System.lineSeparator() })+"
+    val options = helpInfo.split(s"${ lineSeparators }Options:$lineSeparators")(1)
+    options.trim.length shouldNot be(0)
     new File("README.md") should containTrimmed(options)
   }
 

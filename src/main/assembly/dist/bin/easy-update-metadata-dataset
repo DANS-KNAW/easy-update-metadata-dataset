@@ -2,7 +2,7 @@
 
 BINPATH=`readlink -f $0`
 APPHOME=`dirname \`dirname $BINPATH \``
-FHS_CONFIG=/etc/opt/dans.knaw.nl/easy-update-fs-rdb/
+FHS_CONFIG=/etc/opt/dans.knaw.nl/easy-update-metadata-dataset/
 
 if [ -f $HOME/logback.xml ]
 then

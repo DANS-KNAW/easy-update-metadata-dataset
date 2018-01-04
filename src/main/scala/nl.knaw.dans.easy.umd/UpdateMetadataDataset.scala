@@ -15,12 +15,12 @@
  */
 package nl.knaw.dans.easy.umd
 
-import java.io.{ File, FileInputStream, Reader }
-import java.nio.charset.{ Charset, CodingErrorAction, StandardCharsets }
+import java.io.{ File, Reader }
+import java.nio.charset.{ CodingErrorAction, StandardCharsets }
 
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-import resource.{ ManagedResource, Using, managed }
+import resource.{ ManagedResource, managed }
 
 import scala.io.Source
 import scala.util.{ Failure, Success, Try }

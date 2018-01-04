@@ -15,13 +15,15 @@
  */
 package nl.knaw.dans.easy.umd
 
+import java.nio.file.Paths
+
 import com.yourmediashelf.fedora.client.FedoraCredentials
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 object Command extends App with DebugEnhancedLogging {
 
-  val configuration = Configuration()
+  val configuration = Configuration(Paths.get(System.getProperty("app.home")))
   val clo = new CommandLineOptions(args, configuration)
   implicit val settings: Parameters = Parameters(
     test = !clo.doUpdate(),

@@ -19,14 +19,12 @@ import java.io._
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser, CSVRecord }
-import org.slf4j.{ Logger, LoggerFactory }
-
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
-import scala.util.{ Failure, Success, Try }
 import resource._
 
+import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.collection.immutable.Stream.Empty
 import scala.language.postfixOps
+import scala.util.{ Failure, Try }
 
 /** Defaults to the mandatory header line in the CSV file. */
 case class InputRecord(recordNr: Long = 1,

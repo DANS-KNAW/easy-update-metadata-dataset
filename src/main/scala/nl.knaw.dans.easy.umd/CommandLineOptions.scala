@@ -16,11 +16,8 @@
 package nl.knaw.dans.easy.umd
 
 import java.io.File
-import java.net.URL
 
-import com.yourmediashelf.fedora.client.FedoraCredentials
 import org.rogach.scallop._
-import org.slf4j.{Logger, LoggerFactory}
 
 class CommandLineOptions(args: Array[String], configuration: Configuration) extends ScallopConf(args) {
 

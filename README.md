@@ -20,8 +20,8 @@ ARGUMENTS
 
           --doUpdate   Without this argument no changes are made to the repository, the default is a test mode
                        that logs the intended changes
-          --help       Show help message
-          --version    Show version of this program
+      -h, --help       Show help message
+      -v, --version    Show version of this program
     
      trailing arguments:
       input-file (required)   The CSV file (RFC4180) with required changes. The first line must be

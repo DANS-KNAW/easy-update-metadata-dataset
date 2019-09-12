@@ -27,6 +27,8 @@ object Transformer {
   def apply(streamID: String, tag: String, oldValue: String, newValue: String): RuleTransformer = {
     (streamID, tag) match {
       case ("AMD", "datasetState") => datasetStateTransformer(oldValue, newValue)
+      case ("EMD", "orgISNI") => organisationIdTransformer(oldValue, newValue, "http://isni.org/isni/"+newValue.replaceAll(" ", ""), "ISNI")
+      case ("EMD", "orgROR") => organisationIdTransformer(oldValue, newValue, "https://"+newValue, "ROR")
       case _ => plainTransformer(tag, oldValue, newValue)
     }
   }
@@ -67,6 +69,17 @@ object Transformer {
         case other => other
       }
     })
+  }
+
+  private def organisationIdTransformer(organisationName: String, organisationText: String, organisationURI: String, scheme: String): RuleTransformer = {
+    new RuleTransformer(new RewriteRule {
+      override def transform(n: Node): Seq[Node] = n match {
+        case e:Elem if e.label.equals("organization") && e.text.equals(organisationName) =>
+          e ++ <eas:organizationId eas:identification-system={organisationURI} eas:scheme={scheme}>{scheme}: {organisationText}</eas:organizationId>
+        case other => other
+      }
+    })
+
   }
 
   private def newChangeDate(oldState: String, newState: String): Elem = {

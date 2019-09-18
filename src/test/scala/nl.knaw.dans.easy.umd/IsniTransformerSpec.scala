@@ -13,6 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+  * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
 package nl.knaw.dans.easy.umd
 
 import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
@@ -20,7 +35,6 @@ import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
 import scala.xml.PrettyPrinter
 
 class IsniTransformerSpec extends FlatSpec with Matchers with OptionValues with Inside {
-
 
   "EMD <orgISNI>" should "add ISNI organizationId" in {
     val inputXML =
@@ -64,7 +78,7 @@ class IsniTransformerSpec extends FlatSpec with Matchers with OptionValues with 
             <eas:initials>MC</eas:initials>
             <eas:surname>R</eas:surname>
             <eas:organization>BAAC bv</eas:organization>
-            <eas:organizationId eas:identification-system="http://isni.org/isni/0000000472370000" eas:scheme="ISNI">ISNI: 0000 0004 7237 0000</eas:organizationId>
+            <eas:organizationId eas:identification-system="http://isni.org" eas:scheme="ISNI">http://isni.org/isni/0000000472370000</eas:organizationId>
             <eas:entityId eas:scheme="DAI"></eas:entityId>
           </eas:creator>
         </emd:creator>
@@ -76,12 +90,11 @@ class IsniTransformerSpec extends FlatSpec with Matchers with OptionValues with 
   }
 
   it should "add ROR organizationId" in {
-
     val inputXML =
       <emd:easymetadata>
-      <emd:title>
-        <dct:alternative>AMZ Publicaties 2005-12</dct:alternative>
-      </emd:title>
+        <emd:title>
+          <dct:alternative>AMZ Publicaties 2005-12</dct:alternative>
+        </emd:title>
         <emd:creator>
           <eas:creator>
             <eas:initials>J.K.</eas:initials>
@@ -97,7 +110,7 @@ class IsniTransformerSpec extends FlatSpec with Matchers with OptionValues with 
             <eas:entityId eas:scheme="DAI"></eas:entityId>
           </eas:creator>
         </emd:creator>
-        </emd:easymetadata>
+      </emd:easymetadata>
 
     val expectedXML =
       <emd:easymetadata>
@@ -116,7 +129,7 @@ class IsniTransformerSpec extends FlatSpec with Matchers with OptionValues with 
             <eas:initials>J.</eas:initials>
             <eas:surname>Land</eas:surname>
             <eas:organization>Hazenberg Archeologie</eas:organization>
-            <eas:organizationId eas:identification-system="https://ror.org/01h1amn32" eas:scheme="ROR">ROR: ror.org/01h1amn32</eas:organizationId>
+            <eas:organizationId eas:identification-system="https://ror.org" eas:scheme="ROR">https://ror.org/01h1amn32</eas:organizationId>
             <eas:entityId eas:scheme="DAI"></eas:entityId>
           </eas:creator>
         </emd:creator>

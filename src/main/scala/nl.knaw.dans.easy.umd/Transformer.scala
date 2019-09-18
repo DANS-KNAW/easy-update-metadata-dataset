@@ -74,7 +74,7 @@ object Transformer {
   private def organisationIdTransformer(organisationName: String, schemeURI: String, organisationURI: String, scheme: String): RuleTransformer = {
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
-        case e: Elem if e.label.equals("organization") && e.text.equals(organisationName) =>
+        case e: Elem if e.label == "organization" && e.text == organisationName =>
           e ++ <eas:organizationId eas:identification-system={schemeURI} eas:scheme={scheme}>{organisationURI}</eas:organizationId>
         case other => other
       }

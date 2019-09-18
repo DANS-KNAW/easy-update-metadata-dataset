@@ -18,15 +18,17 @@ package nl.knaw.dans.easy.umd
 import org.apache.commons.lang.NotImplementedException
 import org.joda.time.DateTime
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 import scala.xml._
-import scala.xml.transform.{RewriteRule, RuleTransformer}
+import scala.xml.transform.{ RewriteRule, RuleTransformer }
 
 object Transformer {
 
   def apply(streamID: String, tag: String, oldValue: String, newValue: String): RuleTransformer = {
     (streamID, tag) match {
       case ("AMD", "datasetState") => datasetStateTransformer(oldValue, newValue)
+      case ("EMD", "orgISNI") => organisationIdTransformer(oldValue, "http://isni.org", "http://isni.org/isni/" + newValue.replaceAll(" ", ""), "ISNI")
+      case ("EMD", "orgROR") => organisationIdTransformer(oldValue, "https://ror.org", "https://" + newValue, "ROR")
       case _ => plainTransformer(tag, oldValue, newValue)
     }
   }
@@ -62,18 +64,30 @@ object Transformer {
           Elem(prefix, "previousState", attribs, scope, false, Text(oldState))
         case Elem(prefix, "lastStateChange", attribs, scope, _) =>
           Elem(prefix, "lastStateChange", attribs, scope, false, Text(DateTime.now().toString))
-        case Elem(prefix, "stateChangeDates", attribs, scope, children@_*) =>
+        case Elem(prefix, "stateChangeDates", attribs, scope, children @ _*) =>
           Elem(prefix, "stateChangeDates", attribs, scope, false, children ++ newChangeDate(oldState, newState): _*)
         case other => other
       }
     })
   }
 
+  private def organisationIdTransformer(organisationName: String, schemeURI: String, organisationURI: String, scheme: String): RuleTransformer = {
+    new RuleTransformer(new RewriteRule {
+      override def transform(n: Node): Seq[Node] = n match {
+        case e: Elem if e.label == "organization" && e.text == organisationName =>
+          e ++ <eas:organizationId eas:identification-system={schemeURI} eas:scheme={scheme}>{organisationURI}</eas:organizationId>
+        case other => other
+      }
+    })
+  }
+
   private def newChangeDate(oldState: String, newState: String): Elem = {
+    //@formatter:off
     <damd:stateChangeDate>
       <fromState>{oldState}</fromState>
       <toState>{newState}</toState>
       <changeDate>{DateTime.now().toString}</changeDate>
     </damd:stateChangeDate>
+    //@formatter:on
   }
 }

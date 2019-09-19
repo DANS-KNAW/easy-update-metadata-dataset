@@ -33,6 +33,7 @@ package nl.knaw.dans.easy.umd
 import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
 
 import scala.util.{ Failure, Success }
+
 import scala.xml.PrettyPrinter
 
 class IsniTransformerSpec extends FlatSpec with Matchers with OptionValues with Inside {

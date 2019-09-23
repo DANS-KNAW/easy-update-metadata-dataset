@@ -34,13 +34,22 @@ object Transformer {
   }
 
   def validate(streamID: String, tag: String, expectedOldValue: String, oldXML: Elem): Try[Unit] = {
-    (streamID, tag, (oldXML \ "datasetState").text, (oldXML \ "previousState").text) match {
-      case ("AMD", "datasetState", _, "") =>
-        Failure(new NotImplementedException("no <previousState> in AMD."))
-      case ("AMD", "datasetState", `expectedOldValue`, _) =>
-        Success(())
-      case ("AMD", "datasetState", actualOldValue, _) =>
-        Failure(new NotImplementedException(s"expected AMD <datasetState> [$expectedOldValue] but found [$actualOldValue]."))
+    (streamID, tag) match {
+      case ("AMD", "datasetState") =>
+        (streamID, tag, (oldXML \ "datasetState").text, (oldXML \ "previousState").text) match {
+          case ("AMD", "datasetState", _, "") =>
+            Failure(new NotImplementedException("no <previousState> in AMD."))
+          case ("AMD", "datasetState", `expectedOldValue`, _) =>
+            Success(())
+          case ("AMD", "datasetState", actualOldValue, _) =>
+            Failure(new NotImplementedException(s"expected AMD <datasetState> [$expectedOldValue] but found [$actualOldValue]."))
+          case _ =>
+            Success(())
+        }
+      case ("EMD", "orgISNI") => {
+        if ((oldXML \\ "organization").exists(_.text == expectedOldValue))  Success(())
+        else Failure(new NotImplementedError(s"no organization with name [$expectedOldValue] found."))
+      }
       case _ =>
         Success(())
     }

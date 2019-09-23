@@ -30,7 +30,9 @@
   */
 package nl.knaw.dans.easy.umd
 
-import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
+import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
+
+import scala.util.{ Failure, Success }
 
 import scala.xml.PrettyPrinter
 
@@ -87,6 +89,62 @@ class IsniTransformerSpec extends FlatSpec with Matchers with OptionValues with 
     Transformer("EMD", "orgISNI", "BAAC bv", "0000 0004 7237 0000")
       .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
+  it should "reject a dataset that does NOT contain the requested organization" in {
+    val inputXML =
+      <emd:easymetadata>
+        <emd:title>
+          <dct:alternative>BAAC Rapport 0427</dct:alternative>
+        </emd:title>
+        <emd:creator>
+          <eas:creator>
+            <eas:title>drs</eas:title>
+            <eas:initials>A</eas:initials>
+            <eas:surname>B</eas:surname>
+            <eas:organization>BAAC</eas:organization>
+            <eas:entityId eas:scheme="DAI"></eas:entityId>
+          </eas:creator>
+          <eas:creator>
+            <eas:title>drs</eas:title>
+            <eas:initials>MC</eas:initials>
+            <eas:surname>R</eas:surname>
+            <eas:organization>BAAC bv</eas:organization>
+            <eas:entityId eas:scheme="DAI"></eas:entityId>
+          </eas:creator>
+        </emd:creator>
+      </emd:easymetadata>
+
+    inside(Transformer.validate("EMD", "orgISNI", "BAAC 123", inputXML)) {
+      case Failure(e) => e should have message "no organization with name [BAAC 123] found."
+    }
+  }
+
+  it should "validate a dataset that does contain the requested organization" in {
+    val inputXML =
+      <emd:easymetadata>
+        <emd:title>
+          <dct:alternative>BAAC Rapport 0427</dct:alternative>
+        </emd:title>
+        <emd:creator>
+          <eas:creator>
+            <eas:title>drs</eas:title>
+            <eas:initials>A</eas:initials>
+            <eas:surname>B</eas:surname>
+            <eas:organization>BAAC</eas:organization>
+            <eas:entityId eas:scheme="DAI"></eas:entityId>
+          </eas:creator>
+          <eas:creator>
+            <eas:title>drs</eas:title>
+            <eas:initials>MC</eas:initials>
+            <eas:surname>R</eas:surname>
+            <eas:organization>BAAC bv</eas:organization>
+            <eas:entityId eas:scheme="DAI"></eas:entityId>
+          </eas:creator>
+        </emd:creator>
+      </emd:easymetadata>
+
+    Transformer.validate("EMD", "orgISNI", "BAAC bv", inputXML) shouldBe a [Success[_]]
   }
 
   it should "add ROR organizationId" in {

@@ -6,13 +6,14 @@ easy-update-metadata-dataset
 SYNOPSIS
 --------
 
-    easy-update-metadata-dataset [--doUpdate] <datasets.csv>
+    easy-update-metadata-dataset [--doUpdate] <datasets.csv> [additional_directory]
 
 
 DESCRIPTION
 -----------
 
 Batch-updates XML streams of objects in a Fedora Commons repository.
+The command is idempotent, so running it once, or multiple times, gives the same result.
 
 
 ARGUMENTS
@@ -27,6 +28,44 @@ ARGUMENTS
       input-file (required)   The CSV file (RFC4180) with required changes. The first line must be
                               'FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE', in that order. Additional columns
                               and empty lines are ignored.
+      additional-directory (optional)
+                              A reference to a directory containing additional files
+                              
+EXAMPLES
+--------
+
+**Example: update simple value in EMD**
+
+This module was developed to update simple values in the EMD, like the AccessCategory. 
+```$csv
+FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE
+dataset_id, EMD, accessRights, GROUP_ACCESS, OPEN_ACCESS
+```
+**Example: update datasetState in AMD**
+
+To change the state of a dataset, use the following CSV
+```$csv
+FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE
+dataset_id, AMD, datasetState, DRAFT, SUBMITTED
+```
+
+when the dataset does not contain the value in `OLD_VALUE` it will produce a log line like `expected AMD <datasetState> [DRAFT] but found [PUBLISHED]` 
+
+**Example: Adding complex content**
+
+easy-update-metadata-dataset [--doUpdate] <datasets.csv> [additional_directory]
+
+```$csv
+FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE
+dataset_id, EMD, emd:contributor, NILL, sample.xml
+```
+
+when the `OLD_VALUE` is`NILL`, the value in `NEW_VALUE` must be added to the tag 
+mentioned in `XML_TAG` instead of updated. A check is performed to see if the 
+`NEW_VALUE` already exists, to prevent doubles.
+If an `additional_directory` is given, the value of `NEW_VALUE` is interpreted 
+as a relative path into this directory, referencing a file containing the new value. 
+In this way, complex tags, with child-elements, can be added.   
 
 CONTEXT
 -------

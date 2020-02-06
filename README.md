@@ -72,7 +72,13 @@ mentioned in `XML_TAG` instead of updated. A check is performed to see if the
 The `complex_values_directory` is given, so the value of `NEW_VALUE` is interpreted 
 as a relative path in this directory, referencing a file containing the new value in ~/contributorSnippets/contributor_1.xml
 In this way, complex tags, with child-elements, can be added.
-
+The content of which is 
+```xml
+<eas:contributor>
+    <eas:organization>EU</eas:organization>
+    <eas:organizationId eas:identification-system="http://isni.org/" eas:scheme="ISNI">0000 0001 2170 6158</eas:organizationId>
+    <eas:role eas:scheme="DATACITE">RightsHolder</eas:role>
+</eas:contributor>
 CONTEXT
 -------
 

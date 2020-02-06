@@ -27,7 +27,7 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   printedName = "easy-update-metadata-dataset"
   version(s"$printedName v${ configuration.version }")
   val description = "Batch-updates XML streams of objects in a Fedora Commons repository."
-  val synopsis = s"$printedName [--doUpdate] <datasets.csv>"
+  val synopsis = s"$printedName [--doUpdate] <input-file> [<complex_values_directory>]"
   banner(
     s"""
        |$description
@@ -46,8 +46,14 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
   val inputFile: ScallopOption[File] = trailArg[File](name = "input-file",
     descr = "The CSV file (RFC4180) with required changes. The first line must be 'FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE', in that order. Additional columns and empty lines are ignored.")
 
+  val complex_values_directory: ScallopOption[File] = trailArg[File](name = "complex_values_directory", required = false,
+    descr = "A reference to a directory containing files with the complex values. These files are referenced in the input-file.")
+
   validateFileExists(inputFile)
   validateFileIsFile(inputFile)
+  
+  validateFileExists(complex_values_directory)
+  validateFileIsDirectory(complex_values_directory)
 
   footer("")
   verify()

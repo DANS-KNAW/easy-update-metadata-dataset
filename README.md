@@ -6,27 +6,80 @@ easy-update-metadata-dataset
 SYNOPSIS
 --------
 
-    easy-update-metadata-dataset [--doUpdate] <datasets.csv>
+    easy-update-metadata-dataset [--doUpdate] <input-file> [<complex_values_directory>]
 
 
 DESCRIPTION
 -----------
 
 Batch-updates XML streams of objects in a Fedora Commons repository.
+The command is idempotent, so running it either once or multiple times gives the same result.
 
 
 ARGUMENTS
 ---------
 
-          --doUpdate   Without this argument no changes are made to the repository, the default is a test mode
-                       that logs the intended changes
-      -h, --help       Show help message
-      -v, --version    Show version of this program
-    
-     trailing arguments:
-      input-file (required)   The CSV file (RFC4180) with required changes. The first line must be
-                              'FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE', in that order. Additional columns
-                              and empty lines are ignored.
+           --doUpdate   Without this argument no changes are made to the repository, the default is a test mode
+                               that logs the intended changes
+       -h, --help       Show help message
+       -v, --version    Show version of this program
+         
+       trailing arguments:
+           input-file (required)                     The CSV file (RFC4180) with required changes. The first line must
+                                                     be 'FEDORA_ID,STREAM_ID,XML_TAG,OLD_VALUE,NEW_VALUE', in that
+                                                     order. Additional columns and empty lines are ignored.
+           complex_values_directory (not required)   A reference to a directory containing files with the complex
+                                                     values. These files are referenced in the input-file.
+                              
+                              
+EXAMPLES
+--------
+
+### Example: update simple value in EMD
+
+This module was developed to update simple values in the EMD, like the AccessCategory. 
+`easy-update-metadata-dataset --doUpdate changeAccessCategory.csv`
+
+```csv
+FEDORA_ID,      STREAM_ID, XML_TAG,      OLD_VALUE,    NEW_VALUE
+easy-dataset:1, EMD,       accessRights, GROUP_ACCESS, OPEN_ACCESS
+easy-dataset:1, DC,        rights,       GROUP_ACCESS, OPEN_ACCESS
+```
+### Example: check update datasetState in AMD
+
+To check a potential change of the state of a dataset, use the following
+`easy-update-metadata-dataset changeDatasetState.csv`
+
+```csv
+FEDORA_ID,      STREAM_ID, XML_TAG,      OLD_VALUE, NEW_VALUE
+easy-dataset:1, AMD,       datasetState, DRAFT,     SUBMITTED
+```
+
+when the dataset does not contain the expected value as given in `OLD_VALUE` it will produce a log line like `expected AMD <datasetState> [DRAFT] but found [PUBLISHED]`. No values will be changed, because the `--doUpdate` arguments is missing.
+
+### Example: Adding complex content
+
+`easy-update-metadata-dataset --doUpdate changeContributors.csv ~/contributorSnippets/`
+
+```csv
+FEDORA_ID,      STREAM_ID, XML_TAG,         OLD_VALUE, NEW_VALUE
+easy-dataset:1, EMD,       emd:contributor, NILL,      contributor_1.xml
+```
+
+when the `OLD_VALUE` is `NIL`, the value in `NEW_VALUE` must be __added__ to the tag 
+mentioned in `XML_TAG` instead of updated. A check is performed to see if the 
+`NEW_VALUE` already exists, to prevent doubles.
+The `complex_values_directory` is given, so the value of `NEW_VALUE` is interpreted 
+as a relative path in this directory, referencing a file containing the new value in ~/contributorSnippets/contributor_1.xml
+In this way, complex tags, with child-elements, can be added.
+The content of which is 
+```xml
+<eas:contributor>
+    <eas:organization>EU</eas:organization>
+    <eas:organizationId eas:identification-system="http://isni.org/" eas:scheme="ISNI">0000 0001 2170 6158</eas:organizationId>
+    <eas:role eas:scheme="DATACITE">RightsHolder</eas:role>
+</eas:contributor>
+```
 
 CONTEXT
 -------

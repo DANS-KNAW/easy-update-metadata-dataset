@@ -65,7 +65,7 @@ FEDORA_ID,      STREAM_ID, XML_TAG,         OLD_VALUE, NEW_VALUE
 easy-dataset:1, EMD,       emd:contributor, NILL,      contributor_1.xml
 ```
 
-when the `OLD_VALUE` is`NIL`, the value in `NEW_VALUE` must be __added__ to the tag 
+when the `OLD_VALUE` is `NIL`, the value in `NEW_VALUE` must be __added__ to the tag 
 mentioned in `XML_TAG` instead of updated. A check is performed to see if the 
 `NEW_VALUE` already exists, to prevent doubles.
 The `complex_values_directory` is given, so the value of `NEW_VALUE` is interpreted 

@@ -35,7 +35,7 @@ ARGUMENTS
 EXAMPLES
 --------
 
-###Example: update simple value in EMD
+### Example: update simple value in EMD
 
 This module was developed to update simple values in the EMD, like the AccessCategory. 
 `easy-update-metadata-dataset --doUpdate changeAccessCategory.csv`

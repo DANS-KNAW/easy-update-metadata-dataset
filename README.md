@@ -79,6 +79,8 @@ The content of which is
     <eas:organizationId eas:identification-system="http://isni.org/" eas:scheme="ISNI">0000 0001 2170 6158</eas:organizationId>
     <eas:role eas:scheme="DATACITE">RightsHolder</eas:role>
 </eas:contributor>
+```
+
 CONTEXT
 -------
 

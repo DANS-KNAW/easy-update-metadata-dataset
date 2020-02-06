@@ -44,7 +44,7 @@ This module was developed to update simple values in the EMD, like the AccessCat
 FEDORA_ID,      STREAM_ID, XML_TAG,      OLD_VALUE,    NEW_VALUE
 easy-dataset:1, EMD,       accessRights, GROUP_ACCESS, OPEN_ACCESS
 ```
-###Example: check update datasetState in AMD
+### Example: check update datasetState in AMD
 
 To check a potential change of the state of a dataset, use the following
 `easy-update-metadata-dataset changeDatasetState.csv`

@@ -43,6 +43,7 @@ This module was developed to update simple values in the EMD, like the AccessCat
 ```csv
 FEDORA_ID,      STREAM_ID, XML_TAG,      OLD_VALUE,    NEW_VALUE
 easy-dataset:1, EMD,       accessRights, GROUP_ACCESS, OPEN_ACCESS
+easy-dataset:1, DC,        rights,       GROUP_ACCESS, OPEN_ACCESS
 ```
 ### Example: check update datasetState in AMD
 

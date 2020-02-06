@@ -56,7 +56,7 @@ easy-dataset:1, AMD,       datasetState, DRAFT,     SUBMITTED
 
 when the dataset does not contain the expected value as given in `OLD_VALUE` it will produce a log line like `expected AMD <datasetState> [DRAFT] but found [PUBLISHED]`. No values will be changed, because the `--doUpdate` arguments is missing.
 
-###Example: Adding complex content
+### Example: Adding complex content
 
 `easy-update-metadata-dataset --doUpdate changeContributors.csv ~/contributorSnippets/`
 

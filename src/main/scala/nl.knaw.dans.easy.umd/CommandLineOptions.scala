@@ -51,6 +51,9 @@ class CommandLineOptions(args: Array[String], configuration: Configuration) exte
 
   validateFileExists(inputFile)
   validateFileIsFile(inputFile)
+  
+  validateFileExists(complex_values_directory)
+  validateFileIsDirectory(complex_values_directory)
 
   footer("")
   verify()

@@ -128,7 +128,7 @@ class CommandSpec extends FlatSpec with Matchers with Inside with MockFactory wi
     implicit val ps: Parameters = Parameters(test = true, fedoraCredentials = null, input = file)
 
     inside(UpdateMetadataDataset.testFriendlyRun(fedoraMock).map(identity).tried.flatten) {
-      case Failure(e) => e should have message "java.nio.charset.MalformedInputException: Input length = 1"
+      case Failure(e) => e should have message "MalformedInputException reading next record: java.nio.charset.MalformedInputException: Input length = 1"
     }
   }
 

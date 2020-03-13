@@ -71,8 +71,8 @@ object UpdateMetadataDataset extends DebugEnhancedLogging {
     if (oldXML == newXML)
       Failure(new Exception(s"could not find ${record.streamID} <${record.xmlTag}>${record.oldValue}</${record.xmlTag}>"))
     else Try {
-      val oldLines = new PrettyPrinter(160, 2).format(oldXML).lines.toList
-      val newLines = new PrettyPrinter(160, 2).format(newXML.head).lines.toList
+      val oldLines = new PrettyPrinter(160, 2).format(oldXML).linesIterator.toList
+      val newLines = new PrettyPrinter(160, 2).format(newXML.head).linesIterator.toList
 
       logger.info(s"old ${record.streamID}: ${compare(oldLines, newLines)}")
       logger.info(s"new ${record.streamID}: ${compare(newLines, oldLines)}")

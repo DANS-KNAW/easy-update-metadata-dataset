@@ -16,12 +16,14 @@
 package nl.knaw.dans.easy.umd
 
 import org.joda.time.{ DateTime, DateTimeUtils, DateTimeZone }
-import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
+import org.scalatest.{ Inside, OptionValues }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.util.Failure
 import scala.xml.PrettyPrinter
 
-class TransformerSpec extends FlatSpec with Matchers with OptionValues with Inside {
+class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with Inside {
 
   DateTimeZone.setDefault(DateTimeZone.forOffsetHours(1))
   DateTimeUtils.setCurrentMillisFixed(new DateTime("2016-12-09T13:52:51.089+01:00").getMillis)

@@ -46,6 +46,15 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
 
+  it should "delete tag when the new value is EMPTY" in {
+    val inputXML = <someroot><pfx:sometag>Tïtel van de dataset</pfx:sometag><pfx:anothertag>Some content</pfx:anothertag></someroot>
+    val expectedXML = <someroot><pfx:sometag>Tïtel van de dataset</pfx:sometag></someroot>
+
+    Transformer("SOMESTREAMID", "anothertag", "Some content", "EMPTY")
+      .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
+      .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
   "AMD <datasetState>" should "handle initial sword submit" in {
     val inputXML =
       <damd:administrative-md version="0.1">

@@ -48,10 +48,9 @@ object Transformer {
           case _ =>
             Success(())
         }
-      case ("EMD", "orgISNI") => {
+      case ("EMD", "orgISNI") =>
         if ((oldXML \\ "organization").exists(_.text == expectedOldValue))  Success(())
         else Failure(new NotImplementedError(s"no organization with name [$expectedOldValue] found."))
-      }
       case _ =>
         Success(())
     }

@@ -24,6 +24,8 @@ import scala.xml.transform.{ RewriteRule, RuleTransformer }
 
 object Transformer {
 
+  private val EMPTY = "EMPTY"
+
   def apply(streamID: String, tag: String, oldValue: String, newValue: String): RuleTransformer = {
     (streamID, tag) match {
       case ("AMD", "datasetState") => datasetStateTransformer(oldValue, newValue)
@@ -58,6 +60,8 @@ object Transformer {
   private def plainTransformer(label: String, oldValue: String, newValue: String): RuleTransformer =
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
+        case Elem(_, `label`, _, _, _) if newValue == EMPTY && n.text == oldValue =>
+          NodeSeq.Empty
         case Elem(prefix, `label`, attribs, scope, _) if n.text == oldValue =>
           Elem(prefix, label, attribs, scope, false, Text(newValue))
         case other => other

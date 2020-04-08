@@ -35,16 +35,21 @@ ARGUMENTS
 EXAMPLES
 --------
 
-### Example: update simple value in EMD
+### Example: update simple value in EMD and DC
 
-This module was developed to update simple values in the EMD, like the AccessCategory. 
+This module was developed to update simple values in EMD and DC, like the AccessCategory. 
 `easy-update-metadata-dataset --doUpdate changeAccessCategory.csv`
 
 ```csv
 FEDORA_ID,      STREAM_ID, XML_TAG,      OLD_VALUE,    NEW_VALUE
 easy-dataset:1, EMD,       accessRights, GROUP_ACCESS, OPEN_ACCESS
 easy-dataset:1, DC,        rights,       GROUP_ACCESS, OPEN_ACCESS
+easy-dataset:1, EMD,       rightsHolder, Owner,        EMPTY
+easy-dataset:1, DC,        rights,       Owner,        EMPTY
 ```
+
+When the new value is "EMPTY" the XML tag will be deleted from EMD/DC.
+
 ### Example: check update datasetState in AMD
 
 To check a potential change of the state of a dataset, use the following

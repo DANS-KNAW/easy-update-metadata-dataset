@@ -17,11 +17,13 @@ package nl.knaw.dans.easy.umd
 
 import java.io.StringReader
 
-import org.scalatest.{ FlatSpec, Inside, Matchers }
+import org.scalatest.Inside
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.util.{ Failure, Success }
 
-class InputRecordSpec extends FlatSpec with Matchers with Inside {
+class InputRecordSpec extends AnyFlatSpec with Matchers with Inside {
 
   "parse" should "reject invalid header" in {
     val input = InputRecord.parse(new StringReader(

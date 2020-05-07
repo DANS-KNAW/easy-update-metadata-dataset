@@ -19,12 +19,14 @@ import java.io.File
 
 import org.apache.commons.io.FileUtils
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{ FlatSpec, Inside, Matchers, OneInstancePerTest }
+import org.scalatest.{ Inside, OneInstancePerTest }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
-class CommandSpec extends FlatSpec with Matchers with Inside with MockFactory with OneInstancePerTest {
+class CommandSpec extends AnyFlatSpec with Matchers with Inside with MockFactory with OneInstancePerTest {
 
   private implicit val fedoraMock: FedoraStreams = mock[FedoraStreams]
 

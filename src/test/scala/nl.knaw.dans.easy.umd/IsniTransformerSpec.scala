@@ -30,13 +30,15 @@
   */
 package nl.knaw.dans.easy.umd
 
-import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
+
+import org.scalatest.{ Inside, OptionValues }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.util.{ Failure, Success }
-
 import scala.xml.PrettyPrinter
 
-class IsniTransformerSpec extends FlatSpec with Matchers with OptionValues with Inside {
+class IsniTransformerSpec extends AnyFlatSpec with Matchers with OptionValues with Inside {
 
   "EMD <orgISNI>" should "add ISNI organizationId" in {
     val inputXML =

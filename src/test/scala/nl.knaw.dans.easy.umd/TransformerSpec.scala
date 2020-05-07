@@ -16,12 +16,14 @@
 package nl.knaw.dans.easy.umd
 
 import org.joda.time.{ DateTime, DateTimeUtils, DateTimeZone }
-import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
+import org.scalatest.{ Inside, OptionValues }
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.util.Failure
 import scala.xml.PrettyPrinter
 
-class TransformerSpec extends FlatSpec with Matchers with OptionValues with Inside {
+class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with Inside {
 
   DateTimeZone.setDefault(DateTimeZone.forOffsetHours(1))
   DateTimeUtils.setCurrentMillisFixed(new DateTime("2016-12-09T13:52:51.089+01:00").getMillis)
@@ -40,6 +42,15 @@ class TransformerSpec extends FlatSpec with Matchers with OptionValues with Insi
     val expectedXML = <someroot><pfx:sometag>Planetoïde van issue EASY-1128</pfx:sometag></someroot>
 
     Transformer("SOMESTREAMID", "sometag", "Tïtel van de dataset", "Planetoïde van issue EASY-1128")
+      .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
+      .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
+  it should "delete tag when the new value is EMPTY" in {
+    val inputXML = <someroot><pfx:sometag>Tïtel van de dataset</pfx:sometag><pfx:anothertag>Some content</pfx:anothertag></someroot>
+    val expectedXML = <someroot><pfx:sometag>Tïtel van de dataset</pfx:sometag></someroot>
+
+    Transformer("SOMESTREAMID", "anothertag", "Some content", "EMPTY")
       .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }

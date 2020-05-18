@@ -60,16 +60,10 @@ object Transformer {
   private def addChildTransformer(label: String, newChild: Node): RuleTransformer =
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
-        case n @ Elem(_, `label`, _, _, _*) => addChild(n, newChild)
+        case Elem(prefix, `label`, attribs, scope, child @ _*) if !childExists(child, newChild) => Elem(prefix, label, attribs, scope, false, child ++ newChild: _*)
         case other => other
       }
     })
-
-  private def addChild(n: Node, newChild: Node) = n match {
-    case Elem(prefix, label, attribs, scope, child @ _*) if !childExists(child, newChild) =>
-      Elem(prefix, label, attribs, scope, false, child ++ newChild: _*)
-    case other => other
-  }
 
   private def childExists(child: Seq[Node], newChild: Node): Boolean = {
     (child contains newChild) || {

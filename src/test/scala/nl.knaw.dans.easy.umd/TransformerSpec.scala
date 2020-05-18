@@ -55,6 +55,25 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
 
+  it should "add a new tag in a given parent element when the old value is EMPTY" in {
+    val inputXML = <someroot><somegroup><pfx:sometag>Tïtel van de dataset</pfx:sometag></somegroup></someroot>
+    val expectedXML = <someroot><somegroup><pfx:sometag>Tïtel van de dataset</pfx:sometag><pfx:newtag>Something new</pfx:newtag></somegroup></someroot>
+
+    Transformer("SOMESTREAMID", "somegroup", "EMPTY", "<pfx:newtag>Something new</pfx:newtag>")
+      .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
+      .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
+  it should "not add a new tag in a given parent element if the new tag exists already" in {
+    val inputXML = <someroot><somegroup><pfx:sometag>Tïtel van de dataset</pfx:sometag></somegroup></someroot>
+    val expectedXML = <someroot><somegroup><pfx:sometag>Tïtel van de dataset</pfx:sometag><pfx:newtag>Something new</pfx:newtag></somegroup></someroot>
+
+    val newXml = Transformer("SOMESTREAMID", "somegroup", "EMPTY", "<pfx:newtag>Something new</pfx:newtag>").transform(inputXML)
+    Transformer("SOMESTREAMID", "somegroup", "EMPTY", "<pfx:newtag>Something new</pfx:newtag>").transform(newXml)
+      .headOption.map(new PrettyPrinter(160, 2).format(_))
+      .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
   "AMD <datasetState>" should "handle initial sword submit" in {
     val inputXML =
       <damd:administrative-md version="0.1">

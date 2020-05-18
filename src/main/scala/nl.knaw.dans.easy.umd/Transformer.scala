@@ -31,6 +31,7 @@ object Transformer {
       case ("AMD", "datasetState") => datasetStateTransformer(oldValue, newValue)
       case ("EMD", "orgISNI") => organisationIdTransformer(oldValue, "http://isni.org", "http://isni.org/isni/" + newValue.replaceAll(" ", ""), "ISNI")
       case ("EMD", "orgROR") => organisationIdTransformer(oldValue, "https://ror.org", "https://" + newValue, "ROR")
+      case _ if oldValue == EMPTY => addChildTransformer(tag, XML.loadString(newValue))
       case _ => plainTransformer(tag, oldValue, newValue)
     }
   }
@@ -49,10 +50,32 @@ object Transformer {
             Success(())
         }
       case ("EMD", "orgISNI") =>
-        if ((oldXML \\ "organization").exists(_.text == expectedOldValue))  Success(())
+        if ((oldXML \\ "organization").exists(_.text == expectedOldValue)) Success(())
         else Failure(new NotImplementedError(s"no organization with name [$expectedOldValue] found."))
       case _ =>
         Success(())
+    }
+  }
+
+  private def addChildTransformer(label: String, newChild: Node): RuleTransformer =
+    new RuleTransformer(new RewriteRule {
+      override def transform(n: Node): Seq[Node] = n match {
+        case n @ Elem(_, `label`, _, _, _*) => addChild(n, newChild)
+        case other => other
+      }
+    })
+
+  private def addChild(n: Node, newChild: Node) = n match {
+    case Elem(prefix, label, attribs, scope, child @ _*) if !childExists(child, newChild) =>
+      Elem(prefix, label, attribs, scope, false, child ++ newChild: _*)
+    case other => other
+  }
+
+  private def childExists(child: Seq[Node], newChild: Node): Boolean = {
+    (child contains newChild) || {
+      val childS = child.foldLeft("")(_ + _.toString.replaceAll("\\s+", ""))
+      val newChildS = newChild.foldLeft("")(_ + _.toString.replaceAll("\\s+", ""))
+      childS contains newChildS
     }
   }
 

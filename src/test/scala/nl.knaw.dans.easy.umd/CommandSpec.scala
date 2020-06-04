@@ -109,22 +109,6 @@ class CommandSpec extends AnyFlatSpec with Matchers with Inside with MockFactory
     UpdateMetadataDataset.testFriendlyRun(fedoraMock).acquireAndGet(identity) shouldBe a[Success[_]]
   }
 
-  it should "update 1 record, then abort on an inconsistent plain old value" in {
-    // "plain value" as opposed to "AMD <datasetState> value" which is tested with the update method
-    expectUtf8Record(record = 2, fedoraID = 1, stream = "EMD")
-    expectOneFedoraGetXml(Success(<someroot><title>Verkeerde titel van de dataset</title><sometag>tweeën</sometag></someroot>))
-    expectFedoraUpdates(returnValue = Success(()), times = 1)
-
-    val file = new File("src/test/resources/deasy-UTF8-input.csv")
-    implicit val ps: Parameters = Parameters(test = true, fedoraCredentials = null, input = file)
-
-    inside(UpdateMetadataDataset.testFriendlyRun(fedoraMock).acquireAndGet(identity)) {
-      case Failure(e) => e should have message "failed to process: InputRecord(3,easy-dataset:1,DC," +
-        "title,Titel van de dataset,Planetoïde van issue EASY-1128), reason: could not find DC " +
-        "<title>Titel van de dataset</title>"
-    }
-  }
-
   it should "reject CSV when UTF-8 decoding finds invalid characters" in {
     val file = new File("src/test/resources/macroman.txt")
     implicit val ps: Parameters = Parameters(test = true, fedoraCredentials = null, input = file)

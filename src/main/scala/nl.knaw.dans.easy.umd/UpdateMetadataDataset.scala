@@ -61,22 +61,31 @@ object UpdateMetadataDataset extends DebugEnhancedLogging {
       transformer = Transformer(record.streamID, record.xmlTag, record.oldValue, record.newValue)
       newXML = transformer.transform(oldXML)
       _ <- reportChanges(record, oldXML, newXML)
-      _ <- fedora.updateDatastream(record.fedoraID, record.streamID, newXML.toString())
+      _ <- fedora.updateDatastream(record.fedoraID, record.streamID, stringify(newXML))
     } yield ()
   }.recoverWith {
-    case e => Failure(new Exception(s"failed to process: $record, reason: ${e.getMessage}", e))
+    case e => Failure(new Exception(s"failed to process: $record, reason: ${ e.getMessage }", e))
   }
 
-  private def reportChanges(record: InputRecord, oldXML: Elem, newXML: Seq[Node]): Try[Unit] = {
-    if (oldXML == newXML)
-      Failure(new Exception(s"could not find ${record.streamID} <${record.xmlTag}>${record.oldValue}</${record.xmlTag}>"))
-    else Try {
-      val oldLines = new PrettyPrinter(160, 2).format(oldXML).linesIterator.toList
-      val newLines = new PrettyPrinter(160, 2).format(newXML.head).linesIterator.toList
-
-      logger.info(s"old ${record.streamID}: ${compare(oldLines, newLines)}")
-      logger.info(s"new ${record.streamID}: ${compare(newLines, oldLines)}")
+  private def reportChanges(record: InputRecord, oldXML: Elem, newXML: Seq[Node]): Try[Unit] = Try {
+    (oldXML, newXML) match {
+      case (o, n) if o == n && record.oldValue == "EMPTY" => logger.error(s"This element was already present in the xml, no changes made")
+      case (o, n) if o == n => logger.error(s"could not find ${ record.streamID } <${ record.xmlTag }>${ record.oldValue }</${ record.xmlTag }>")
+      case _ =>
+        val oldLines = new PrettyPrinter(160, 2).format(oldXML).linesIterator.toList
+        val newLines = new PrettyPrinter(160, 2).format(newXML.head).linesIterator.toList
+        logger.info(s"old ${ record.streamID }: ${ compare(oldLines, newLines) }")
+        logger.info(s"new ${ record.streamID }: ${ compare(newLines, oldLines) }")
     }
+  }
+
+  private def stringify(newXML: Seq[Node]): String = {
+    val xml = newXML.toString()
+    // In some cases Transformer.transform gives the new xml in a List (e.g. when a new node is ADDED and the parent element is the ROOT element, e.g. DC)
+    if (xml.startsWith("List(") && xml.endsWith(")"))
+      xml.substring("List(".length, xml.length - 1)
+    else
+      xml
   }
 
   /** @return lines of xs not in ys */

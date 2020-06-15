@@ -31,6 +31,7 @@ object Transformer {
       case ("AMD", "datasetState") => datasetStateTransformer(oldValue, newValue)
       case ("EMD", "orgISNI") => organisationIdTransformer(oldValue, "http://isni.org", "http://isni.org/isni/" + newValue.replaceAll(" ", ""), "ISNI")
       case ("EMD", "orgROR") => organisationIdTransformer(oldValue, "https://ror.org", "https://" + newValue, "ROR")
+      case ("EMD", "rights")  if oldValue == EMPTY => addLicenseTransformer(tag, XML.loadString(newValue))
       case _ if oldValue == EMPTY => addChildTransformer(tag, XML.loadString(newValue))
       case _ => plainTransformer(tag, oldValue, newValue)
     }
@@ -65,12 +66,36 @@ object Transformer {
       }
     })
 
+  private def addLicenseTransformer(label: String, newChild: Node): RuleTransformer =
+    new RuleTransformer(new RewriteRule {
+      override def transform(n: Node): Seq[Node] = n match {
+        case Elem(prefix, `label`, attribs, scope, child @ _*) if !childExists(child, newChild) => Elem(prefix, label, attribs, scope, false, childrenWithNewLicense(child, newChild): _*)
+        case other => other
+      }
+    })
+
   private def childExists(child: Seq[Node], newChild: Node): Boolean = {
     (child contains newChild) || {
       val childS = child.foldLeft("")(_ + _.toString.replaceAll("\\s+", ""))
       val newChildS = newChild.foldLeft("")(_ + _.toString.replaceAll("\\s+", ""))
       childS contains newChildS
     }
+  }
+
+  private def childrenWithNewLicense(children: Seq[Node], newChild: Node): Seq[Node] = {
+    var newChildren = Seq[Node]()
+    var added: Boolean = false
+    for (child <- children) {
+      if (child.label == "rightsHolder" && !added) {
+        newChildren = newChildren :+ newChild
+        added = true
+      }
+      newChildren = newChildren :+ child
+    }
+    if (!added) {
+      newChildren = newChildren :+ newChild
+    }
+    newChildren
   }
 
   private def plainTransformer(label: String, oldValue: String, newValue: String): RuleTransformer =

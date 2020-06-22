@@ -69,7 +69,8 @@ object Transformer {
   private def addLicenseTransformer(label: String, newChild: Node): RuleTransformer =
     new RuleTransformer(new RewriteRule {
       override def transform(n: Node): Seq[Node] = n match {
-        case Elem(prefix, `label`, attribs, scope, child @ _*) if !childExists(child, newChild) => Elem(prefix, label, attribs, scope, false, childrenWithNewLicense(child, newChild): _*)
+        case Elem(prefix, `label`, attribs, scope, child @ _*) if !childExists(child, newChild) =>
+          Elem(prefix, label, attribs, scope, false, childrenWithNewLicense(child, newChild): _*)
         case other => other
       }
     })

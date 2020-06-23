@@ -74,6 +74,44 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
 
+  it should "add in EMD a new license tag in a given parent element, before rightsHolder tag, when the old value is EMPTY" in {
+    val inputXML = <someroot>
+      <emd:rights>
+        <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
+        <dct:rightsHolder>BAAC</dct:rightsHolder>
+      </emd:rights>
+    </someroot>
+    val expectedXML = <someroot>
+      <emd:rights>
+        <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
+        <dct:license>http://creativecommons.org/licenses/by/4.0</dct:license>
+        <dct:rightsHolder>BAAC</dct:rightsHolder>
+      </emd:rights>
+    </someroot>
+
+    Transformer("EMD", "rights", "EMPTY", "<dct:license>http://creativecommons.org/licenses/by/4.0</dct:license>")
+      .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
+      .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
+  it should "add in EMD a new license tag as last in emd:rights when there is no rightsHolder tag" in {
+    val inputXML = <someroot>
+      <emd:rights>
+        <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
+      </emd:rights>
+    </someroot>
+    val expectedXML = <someroot>
+      <emd:rights>
+        <dct:accessRights eas:schemeId="common.dcterms.accessrights">OPEN_ACCESS</dct:accessRights>
+        <dct:license>http://creativecommons.org/licenses/by/4.0</dct:license>
+      </emd:rights>
+    </someroot>
+
+    Transformer("EMD", "rights", "EMPTY", "<dct:license>http://creativecommons.org/licenses/by/4.0</dct:license>")
+      .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
+      .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
   "AMD <datasetState>" should "handle initial sword submit" in {
     val inputXML =
       <damd:administrative-md version="0.1">

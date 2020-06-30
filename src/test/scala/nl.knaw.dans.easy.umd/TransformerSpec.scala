@@ -37,6 +37,15 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
 
+  it should "replace a tag with the specified old value and prefix when the prefix is explicitly given" in {
+    val inputXML = <someroot><pfx:sometag>first value</pfx:sometag><pfx2:sometag>second value</pfx2:sometag></someroot>
+    val expectedXML = <someroot><pfx:sometag>first value</pfx:sometag><pfx2:sometag>new value</pfx2:sometag></someroot>
+
+    Transformer("SOMESTREAMID", "pfx2:sometag", "second value", "new value")
+      .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
+      .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
   it should "properly process UTF8 characters" in {
     val inputXML = <someroot><pfx:sometag>Tïtel van de dataset</pfx:sometag></someroot>
     val expectedXML = <someroot><pfx:sometag>Planetoïde van issue EASY-1128</pfx:sometag></someroot>
@@ -51,6 +60,15 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
     val expectedXML = <someroot><pfx:sometag>Tïtel van de dataset</pfx:sometag></someroot>
 
     Transformer("SOMESTREAMID", "anothertag", "Some content", "EMPTY")
+      .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
+      .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
+  it should "delete tag with a specific prefix when the new value is EMPTY and prefix is given" in {
+    val inputXML = <someroot><pfx:sometag>Tïtel van de dataset</pfx:sometag><pfx:anothertag>Some content</pfx:anothertag><pfx2:anothertag>Some content</pfx2:anothertag></someroot>
+    val expectedXML = <someroot><pfx:sometag>Tïtel van de dataset</pfx:sometag><pfx:anothertag>Some content</pfx:anothertag></someroot>
+
+    Transformer("SOMESTREAMID", "pfx2:anothertag", "Some content", "EMPTY")
       .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
@@ -108,6 +126,33 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
     </someroot>
 
     Transformer("EMD", "rights", "EMPTY", "<dct:license>http://creativecommons.org/licenses/by/4.0</dct:license>")
+      .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
+      .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
+  it should "add in EMD a new tag under a specific prefix, when it is given" in {
+    val inputXML = <someroot>
+      <emd:contributor>
+        <eas:contributor>
+          <eas:organization>dans</eas:organization>
+          <eas:entityId eas:scheme="DAI"></eas:entityId>
+        </eas:contributor>
+      </emd:contributor>
+    </someroot>
+    val expectedXML = <someroot>
+      <emd:contributor>
+        <eas:contributor>
+          <eas:organization>dans</eas:organization>
+          <eas:entityId eas:scheme="DAI"></eas:entityId>
+        </eas:contributor>
+        <eas:contributor>
+          <eas:organization>Organization</eas:organization>
+          <eas:role eas:scheme="DATACITE">RightsHolder</eas:role>
+        </eas:contributor>
+      </emd:contributor>
+    </someroot>
+
+    Transformer("EMD", "emd:contributor", "EMPTY", "<eas:contributor><eas:organization>Organization</eas:organization><eas:role eas:scheme=\"DATACITE\">RightsHolder</eas:role></eas:contributor>")
       .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }

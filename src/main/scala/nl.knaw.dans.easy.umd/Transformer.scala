@@ -26,15 +26,24 @@ object Transformer {
 
   private val EMPTY = "EMPTY"
 
-  def apply(streamID: String, tag: String, oldValue: String, newValue: String): RuleTransformer = {
+  def apply(streamID: String, tagOrig: String, oldValue: String, newValue: String): RuleTransformer = {
+    val (prefix, tag) = getPrefixAndTag(tagOrig)
     (streamID, tag) match {
       case ("AMD", "datasetState") => datasetStateTransformer(oldValue, newValue)
       case ("EMD", "orgISNI") => organisationIdTransformer(oldValue, "http://isni.org", "http://isni.org/isni/" + newValue.replaceAll(" ", ""), "ISNI")
       case ("EMD", "orgROR") => organisationIdTransformer(oldValue, "https://ror.org", "https://" + newValue, "ROR")
-      case ("EMD", "rights")  if oldValue == EMPTY => addLicenseTransformer(tag, XML.loadString(newValue))
-      case _ if oldValue == EMPTY => addChildTransformer(tag, XML.loadString(newValue))
-      case _ => plainTransformer(tag, oldValue, newValue)
+      case ("EMD", "rights") if oldValue == EMPTY => addLicenseTransformer(prefix, tag, XML.loadString(newValue))
+      case _ if oldValue == EMPTY => addChildTransformer(prefix, tag, XML.loadString(newValue))
+      case _ => plainTransformer(prefix, tag, oldValue, newValue)
     }
+  }
+
+  def getPrefixAndTag(tag: String): (String, String) = {
+    val a = tag.split(":")
+    if (a.length > 1)
+      (a(0).trim, a(1).trim)
+    else
+      ("", a(0).trim)
   }
 
   def validate(streamID: String, tag: String, expectedOldValue: String, oldXML: Elem): Try[Unit] = {
@@ -58,22 +67,39 @@ object Transformer {
     }
   }
 
-  private def addChildTransformer(label: String, newChild: Node): RuleTransformer =
-    new RuleTransformer(new RewriteRule {
-      override def transform(n: Node): Seq[Node] = n match {
-        case Elem(prefix, `label`, attribs, scope, child @ _*) if !childExists(child, newChild) => Elem(prefix, label, attribs, scope, false, child ++ newChild: _*)
-        case other => other
-      }
-    })
+  private def addChildTransformer(prefix: String, label: String, newChild: Node): RuleTransformer =
+    if (prefix.isEmpty)
+      new RuleTransformer(new RewriteRule {
+        override def transform(n: Node): Seq[Node] = n match {
+          case Elem(prefix, `label`, attribs, scope, child @ _*) if !childExists(child, newChild) => Elem(prefix, label, attribs, scope, false, child ++ newChild: _*)
+          case other => other
+        }
+      })
+    else
+      new RuleTransformer(new RewriteRule {
+        override def transform(n: Node): Seq[Node] = n match {
+          case Elem(`prefix`, `label`, attribs, scope, child @ _*) if !childExists(child, newChild) => Elem(prefix, label, attribs, scope, false, child ++ newChild: _*)
+          case other => other
+        }
+      })
 
-  private def addLicenseTransformer(label: String, newChild: Node): RuleTransformer =
-    new RuleTransformer(new RewriteRule {
-      override def transform(n: Node): Seq[Node] = n match {
-        case Elem(prefix, `label`, attribs, scope, child @ _*) if !childExists(child, newChild) =>
-          Elem(prefix, label, attribs, scope, false, childrenWithNewLicense(child, newChild): _*)
-        case other => other
-      }
-    })
+  private def addLicenseTransformer(prefix: String, label: String, newChild: Node): RuleTransformer =
+    if (prefix.isEmpty)
+      new RuleTransformer(new RewriteRule {
+        override def transform(n: Node): Seq[Node] = n match {
+          case Elem(prefix, `label`, attribs, scope, child @ _*) if !childExists(child, newChild) =>
+            Elem(prefix, label, attribs, scope, false, childrenWithNewLicense(child, newChild): _*)
+          case other => other
+        }
+      })
+    else
+      new RuleTransformer(new RewriteRule {
+        override def transform(n: Node): Seq[Node] = n match {
+          case Elem(`prefix`, `label`, attribs, scope, child @ _*) if !childExists(child, newChild) =>
+            Elem(prefix, label, attribs, scope, false, childrenWithNewLicense(child, newChild): _*)
+          case other => other
+        }
+      })
 
   private def childExists(child: Seq[Node], newChild: Node): Boolean = {
     (child contains newChild) || {
@@ -99,16 +125,27 @@ object Transformer {
     newChildren
   }
 
-  private def plainTransformer(label: String, oldValue: String, newValue: String): RuleTransformer =
-    new RuleTransformer(new RewriteRule {
-      override def transform(n: Node): Seq[Node] = n match {
-        case Elem(_, `label`, _, _, _) if newValue == EMPTY && n.text == oldValue =>
-          NodeSeq.Empty
-        case Elem(prefix, `label`, attribs, scope, _) if n.text == oldValue =>
-          Elem(prefix, label, attribs, scope, false, Text(newValue))
-        case other => other
-      }
-    })
+  private def plainTransformer(prefix: String, label: String, oldValue: String, newValue: String): RuleTransformer =
+    if (prefix.isEmpty)
+      new RuleTransformer(new RewriteRule {
+        override def transform(n: Node): Seq[Node] = n match {
+          case Elem(_, `label`, _, _, _) if newValue == EMPTY && n.text == oldValue =>
+            NodeSeq.Empty
+          case Elem(prefix, `label`, attribs, scope, _) if n.text == oldValue =>
+            Elem(prefix, label, attribs, scope, false, Text(newValue))
+          case other => other
+        }
+      })
+    else
+      new RuleTransformer(new RewriteRule {
+        override def transform(n: Node): Seq[Node] = n match {
+          case Elem(`prefix`, `label`, _, _, _) if newValue == EMPTY && n.text == oldValue =>
+            NodeSeq.Empty
+          case Elem(`prefix`, `label`, attribs, scope, _) if n.text == oldValue =>
+            Elem(prefix, label, attribs, scope, false, Text(newValue))
+          case other => other
+        }
+      })
 
   private def datasetStateTransformer(oldState: String, newState: String): RuleTransformer = {
     new RuleTransformer(new RewriteRule {

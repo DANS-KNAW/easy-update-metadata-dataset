@@ -21,7 +21,7 @@ import org.scalatest.{ Inside, OptionValues }
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import scala.util.Failure
+import scala.util.{ Failure, Success }
 import scala.xml.PrettyPrinter
 
 class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with Inside {
@@ -239,10 +239,8 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
         </damd:workflowData>
       </damd:administrative-md>
 
-    Transformer.validate("AMD", "datasetState", "PUBLISHED", inputXML) should matchPattern {
-      case Failure(e: NotImplementedException) if e.getMessage == "no <previousState> in AMD." =>
-    }
-    Transformer("AMD", "datasetState", "PUBLISHED", "MAINTENANCE")
+    Transformer.validate("AMD", "datasetState", "PUBLISHED", inputXML) shouldBe a[Success[_]]
+    Transformer("AMD", "datasetState", "PUBLISHED", "MAINTENANCE", isFirstDatesetStateChange = true)
       .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
@@ -300,7 +298,7 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
     }
   }
 
-  it should "reject an initial web-ui draft because a missing <previousState> is not implemented" in {
+  it should "accept an initial web-ui draft because a missing <previousState> is now implemented" in {
     val inputXML =
       <damd:administrative-md version="0.1">
         <datasetState>DRAFT</datasetState>
@@ -313,8 +311,6 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
         </damd:workflowData>
       </damd:administrative-md>
 
-    inside(Transformer.validate("AMD", "datasetState", "DRAFT", inputXML)) {
-      case Failure(e) => e should have message "no <previousState> in AMD."
-    }
+    Transformer.validate("AMD", "datasetState", "DRAFT", inputXML) shouldBe a[Success[_]]
   }
 }

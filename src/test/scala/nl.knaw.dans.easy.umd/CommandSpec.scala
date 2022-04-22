@@ -69,20 +69,6 @@ class CommandSpec extends AnyFlatSpec with Matchers with Inside with MockFactory
     }
   }
 
-  it should "report a missing previousState" in {
-    expectOneFedoraGetXml(Success(<someroot><sometag>first value</sometag> <sometag>second value</sometag></someroot>))
-
-    val inputRecord = InputRecord(fedoraID = "easy-dataset:1", streamID = "AMD", xmlTag = "datasetState", newValue = "new", oldValue = "first value")
-    implicit val parameters: Parameters = Parameters(test = true, fedoraCredentials = null, input = null)
-
-    inside(UpdateMetadataDataset.update(fedoraMock)(inputRecord)) {
-      case Failure(e) =>
-        e should have message "failed to process: InputRecord(1,easy-dataset:1,AMD,datasetState,first value,new)" +
-          ", reason: no <previousState> in AMD."
-        e.getCause.getMessage should include("previousState")
-    }
-  }
-
   it should "report an inconsistent old AMD <datasetState> value" in {
     expectOneFedoraGetXml(Success(<someroot><datasetState>first value</datasetState> <previousState>second value</previousState></someroot>))
 

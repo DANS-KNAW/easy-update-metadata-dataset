@@ -212,11 +212,6 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
         <datasetState>PUBLISHED</datasetState>
         <depositorId>user001</depositorId>
         <stateChangeDates/>
-        <groupIds/>
-        <damd:workflowData version="0.1">
-          <assigneeId>NOT_ASSIGNED</assigneeId>
-          <wfs:workflow>...</wfs:workflow>
-        </damd:workflowData>
       </damd:administrative-md>
 
     val expectedXML =
@@ -232,11 +227,6 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
             <changeDate>2016-12-09T13:52:51.089+01:00</changeDate>
           </damd:stateChangeDate>
         </stateChangeDates>
-        <groupIds/>
-        <damd:workflowData version="0.1">
-          <assigneeId>NOT_ASSIGNED</assigneeId>
-          <wfs:workflow>...</wfs:workflow>
-        </damd:workflowData>
       </damd:administrative-md>
 
     Transformer.validate("AMD", "datasetState", "PUBLISHED", inputXML) shouldBe a[Success[_]]

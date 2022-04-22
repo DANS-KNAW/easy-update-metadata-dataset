@@ -15,11 +15,10 @@
  */
 package nl.knaw.dans.easy.umd
 
-import org.apache.commons.lang.NotImplementedException
 import org.joda.time.{ DateTime, DateTimeUtils, DateTimeZone }
-import org.scalatest.{ Inside, OptionValues }
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{ Inside, OptionValues }
 
 import scala.util.{ Failure, Success }
 import scala.xml.PrettyPrinter
@@ -207,7 +206,6 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }
 
-
   "AMD <datasetState>" should "set maintenance on immediately published datasets" in {
     val inputXML =
       <damd:administrative-md version="0.1">
@@ -216,8 +214,8 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
         <stateChangeDates/>
         <groupIds/>
         <damd:workflowData version="0.1">
-        <assigneeId>NOT_ASSIGNED</assigneeId>
-        <wfs:workflow>...</wfs:workflow>
+          <assigneeId>NOT_ASSIGNED</assigneeId>
+          <wfs:workflow>...</wfs:workflow>
         </damd:workflowData>
       </damd:administrative-md>
 
@@ -233,7 +231,9 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
             <toState>MAINTENANCE</toState>
             <changeDate>2016-12-09T13:52:51.089+01:00</changeDate>
           </damd:stateChangeDate>
-        </stateChangeDates> <groupIds/> <damd:workflowData version="0.1">
+        </stateChangeDates>
+        <groupIds/>
+        <damd:workflowData version="0.1">
           <assigneeId>NOT_ASSIGNED</assigneeId>
           <wfs:workflow>...</wfs:workflow>
         </damd:workflowData>

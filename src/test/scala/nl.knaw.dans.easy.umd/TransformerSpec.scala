@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.umd
 
+import org.apache.commons.lang.NotImplementedException
 import org.joda.time.{ DateTime, DateTimeUtils, DateTimeZone }
 import org.scalatest.{ Inside, OptionValues }
 import org.scalatest.flatspec.AnyFlatSpec
@@ -202,6 +203,46 @@ class TransformerSpec extends AnyFlatSpec with Matchers with OptionValues with I
       </damd:administrative-md>
 
     Transformer("AMD", "datasetState", "SUBMITTED", "PUBLISHED")
+      .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
+      .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
+  }
+
+
+  "AMD <datasetState>" should "set maintenance on immediately published datasets" in {
+    val inputXML =
+      <damd:administrative-md version="0.1">
+        <datasetState>PUBLISHED</datasetState>
+        <depositorId>user001</depositorId>
+        <stateChangeDates/>
+        <groupIds/>
+        <damd:workflowData version="0.1">
+        <assigneeId>NOT_ASSIGNED</assigneeId>
+        <wfs:workflow>...</wfs:workflow>
+        </damd:workflowData>
+      </damd:administrative-md>
+
+    val expectedXML =
+      <damd:administrative-md version="0.1">
+        <datasetState>MAINTENANCE</datasetState>
+        <previousState>PUBLISHED</previousState>
+        <lastStateChange>2016-12-09T13:52:51.089+01:00</lastStateChange>
+        <depositorId>user001</depositorId>
+        <stateChangeDates>
+          <damd:stateChangeDate>
+            <fromState>PUBLISHED</fromState>
+            <toState>MAINTENANCE</toState>
+            <changeDate>2016-12-09T13:52:51.089+01:00</changeDate>
+          </damd:stateChangeDate>
+        </stateChangeDates> <groupIds/> <damd:workflowData version="0.1">
+          <assigneeId>NOT_ASSIGNED</assigneeId>
+          <wfs:workflow>...</wfs:workflow>
+        </damd:workflowData>
+      </damd:administrative-md>
+
+    Transformer.validate("AMD", "datasetState", "PUBLISHED", inputXML) should matchPattern {
+      case Failure(e: NotImplementedException) if e.getMessage == "no <previousState> in AMD." =>
+    }
+    Transformer("AMD", "datasetState", "PUBLISHED", "MAINTENANCE")
       .transform(inputXML).headOption.map(new PrettyPrinter(160, 2).format(_))
       .value shouldBe new PrettyPrinter(160, 2).format(expectedXML)
   }

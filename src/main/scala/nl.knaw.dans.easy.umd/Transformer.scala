@@ -26,7 +26,7 @@ object Transformer {
 
   private val EMPTY = "EMPTY"
 
-  def apply(streamID: String, tagOrig: String, oldValue: String, newValue: String): RuleTransformer = {
+  def apply(streamID: String, tagOrig: String, oldValue: String, newValue: String, isFirstDatesetStateChange: Boolean = false): RuleTransformer = {
     val (prefix, tag) = getPrefixAndTag(tagOrig)
     (streamID, tag) match {
       case ("AMD", "datasetState") => datasetStateTransformer(oldValue, newValue)
@@ -49,12 +49,10 @@ object Transformer {
   def validate(streamID: String, tag: String, expectedOldValue: String, oldXML: Elem): Try[Unit] = {
     (streamID, tag) match {
       case ("AMD", "datasetState") =>
-        (streamID, tag, (oldXML \ "datasetState").text, (oldXML \ "previousState").text) match {
-          case ("AMD", "datasetState", _, "") =>
-            Failure(new NotImplementedException("no <previousState> in AMD."))
-          case ("AMD", "datasetState", `expectedOldValue`, _) =>
+        (streamID, tag, (oldXML \ "datasetState").text) match {
+          case ("AMD", "datasetState", `expectedOldValue`) =>
             Success(())
-          case ("AMD", "datasetState", actualOldValue, _) =>
+          case ("AMD", "datasetState", actualOldValue) =>
             Failure(new NotImplementedException(s"expected AMD <datasetState> [$expectedOldValue] but found [$actualOldValue]."))
           case _ =>
             Success(())
@@ -147,17 +145,19 @@ object Transformer {
         }
       })
 
-  private def datasetStateTransformer(oldState: String, newState: String): RuleTransformer = {
+  private def datasetStateTransformer(oldState: String, newState: String) = {
     new RuleTransformer(new RewriteRule {
+      private val now: String = DateTime.now().toString
       override def transform(n: Node): Seq[Node] = n match {
-        case Elem(prefix, "datasetState", attribs, scope, _) =>
-          Elem(prefix, "datasetState", attribs, scope, false, Text(newState))
-        case Elem(prefix, "previousState", attribs, scope, _) =>
-          Elem(prefix, "previousState", attribs, scope, false, Text(oldState))
-        case Elem(prefix, "lastStateChange", attribs, scope, _) =>
-          Elem(prefix, "lastStateChange", attribs, scope, false, Text(DateTime.now().toString))
+        case Elem(_, "datasetState", _, _, _) =>
+          <datasetState>{ newState }</datasetState>
+          <previousState>{ oldState }</previousState>
+          <lastStateChange>{ now }</lastStateChange>
+        case Elem(_, "previousState", _, _, _) |
+             Elem(_, "lastStateChange", _, _, _) =>
+          NodeSeq.Empty // these might or might not have been present
         case Elem(prefix, "stateChangeDates", attribs, scope, children @ _*) =>
-          Elem(prefix, "stateChangeDates", attribs, scope, false, children ++ newChangeDate(oldState, newState): _*)
+          Elem(prefix, "stateChangeDates", attribs, scope, false, children ++ newChangeDate(oldState, newState, now): _*)
         case other => other
       }
     })
@@ -173,13 +173,11 @@ object Transformer {
     })
   }
 
-  private def newChangeDate(oldState: String, newState: String): Elem = {
-    //@formatter:off
+  private def newChangeDate(oldState: String, newState: String, now: String): Elem = {
     <damd:stateChangeDate>
       <fromState>{oldState}</fromState>
       <toState>{newState}</toState>
-      <changeDate>{DateTime.now().toString}</changeDate>
+      <changeDate>{ now }</changeDate>
     </damd:stateChangeDate>
-    //@formatter:on
   }
 }

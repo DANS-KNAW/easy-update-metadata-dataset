@@ -1,6 +1,5 @@
 easy-update-metadata-dataset
 ============================
-[![Build Status](https://travis-ci.org/DANS-KNAW/easy-update-metadata-dataset.png?branch=master)](https://travis-ci.org/DANS-KNAW/easy-update-metadata-dataset)
 
 
 SYNOPSIS

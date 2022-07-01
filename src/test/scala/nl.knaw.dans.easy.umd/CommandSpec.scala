@@ -34,7 +34,7 @@ class CommandSpec extends AnyFlatSpec with Matchers with Inside with MockFactory
 
   private def expectFedoraUpdates(returnValue: Try[Unit], times: Int) = fedoraMock.updateDatastream _ expects(*, *, *) returning returnValue repeat times
 
-  private def expectUtf8Record(record: Int, fedoraID: Int, stream: String) = {
+  private def expectUtf8Record(): Any = {
     expectOneFedoraGetXml(Success(
       <someroot>
         <title>Titel van de dataset</title> <sometag>tweeën</sometag>
@@ -83,10 +83,10 @@ class CommandSpec extends AnyFlatSpec with Matchers with Inside with MockFactory
   }
 
   "testFriendlyRun" should "preserve UTF8 characters of CSV" in {
-    expectUtf8Record(record = 2, fedoraID = 1, stream = "EMD")
-    expectUtf8Record(record = 3, fedoraID = 1, stream = "DC")
-    expectUtf8Record(record = 4, fedoraID = 2, stream = "EMD")
-    expectUtf8Record(record = 5, fedoraID = 2, stream = "DC")
+    expectUtf8Record()
+    expectUtf8Record()
+    expectUtf8Record()
+    expectUtf8Record()
     expectFedoraUpdates(returnValue = Success(()), times = 4)
 
     // CSV file with UTF8 in the new value, the file can also be applied manually as explained in its comment column
@@ -96,22 +96,23 @@ class CommandSpec extends AnyFlatSpec with Matchers with Inside with MockFactory
   }
 
   it should "continue after reporting a problem" in {
-    expectUtf8Record(record = 2, fedoraID = 1, stream = "EMD")
+    expectOneFedoraGetXml(Success(<damd:administrative-md version="0.1"><datasetState>PUBLISHED</datasetState></damd:administrative-md>))
+    expectOneFedoraGetXml(Success(<damd:administrative-md version="0.1"><datasetState>DRAFT</datasetState></damd:administrative-md>))
     expectOneFedoraGetXml(Failure(new Exception("mocked message")))
-    expectOneFedoraGetXml(Failure(new Exception("mocked message")))
-    expectUtf8Record(record = 5, fedoraID = 2, stream = "DC")
-    expectFedoraUpdates(returnValue = Success(()), times = 2)
+    expectOneFedoraGetXml(Success(<x/>))
+    expectFedoraUpdates(returnValue = Success(()), times = 1)
 
     // CSV file with UTF8 in the new value, the file can also be applied manually as explained in its comment column
-    val file = new File("src/test/resources/deasy-UTF8-input.csv")
+    val file = new File("src/test/resources/deasy-input.csv")
     implicit val ps: Parameters = Parameters(test = true, fedoraCredentials = null, input = file)
     //note that errors are also logged by UpdateMetadataDataset.update
     UpdateMetadataDataset.testFriendlyRun(fedoraMock).acquireAndGet(identity)
       .toEither.left.get.getMessage.replace("occurred: ","occurred:") shouldBe
-     """2 exceptions occurred:
+     """3 exceptions occurred:
        |--- START OF EXCEPTION LIST ---
-       |(0) failed to process: InputRecord(3,easy-dataset:1,DC,title,Titel van de dataset,Planetoïde van issue EASY-1128), reason: mocked message
-       |(1) failed to process: InputRecord(4,easy-dataset:2,EMD,title,Titel van de dataset,Planetoïde van issue EASY-1128), reason: mocked message
+       |(0) failed to process: InputRecord(2,easy-dataset:1,AMD,datasetState,SUBMITTED,PUBLISHED), reason: expected AMD <datasetState> [SUBMITTED] but found [PUBLISHED].
+       |(1) failed to process: InputRecord(4,easy-dataset:3,AMD,datasetState,DRAFT,SUBMITTED), reason: mocked message
+       |(2) failed to process: InputRecord(5,easy-dataset:4,AMD,datasetState,HISTORY,ANY_DISCIPLINE), reason: expected AMD <datasetState> [HISTORY] but found [].
        |--- END OF EXCEPTION LIST ---.""".stripMargin
   }
 

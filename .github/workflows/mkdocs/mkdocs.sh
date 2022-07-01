@@ -15,24 +15,12 @@
 # limitations under the License.
 #
 
-GH_ORG=DANS-KNAW
-
 set -e
 
-# Relies on Travis checking out repo to a dir with the repo's name.
-GH_REPO=$(basename $TRAVIS_BUILD_DIR)
-REMOTE="https://${GH_TOKEN}@github.com/${GH_ORG}/${GH_REPO}"
+REMOTE="https://@github.com/${GITHUB_REPOSITORY}"
 git remote set-url origin ${REMOTE}
 
-pip install -r .travis/requirements.txt
-
-echo "START installing DANS mkdocs theme..."
-git clone https://github.com/Dans-labs/mkdocs-dans $HOME/mkdocs-dans
-pushd $HOME/mkdocs-dans
-git pull
-python3 build.py pack
-popd
-echo "DONE installing DANS mkdocs theme."
+pip install -r .github/workflows/mkdocs/requirements.txt
 
 echo "START deploying docs to GitHub pages..."
 mkdocs gh-deploy --force

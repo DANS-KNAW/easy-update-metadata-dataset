@@ -87,7 +87,8 @@ class CommandSpec extends AnyFlatSpec with Matchers with Inside with MockFactory
     expectUtf8Record()
     expectUtf8Record()
     expectUtf8Record()
-    expectFedoraUpdates(returnValue = Success(()), times = 4)
+    expectUtf8Record()
+    expectFedoraUpdates(returnValue = Success(()), times = 5)
 
     // CSV file with UTF8 in the new value, the file can also be applied manually as explained in its comment column
     val file = new File("src/test/resources/deasy-UTF8-input.csv")

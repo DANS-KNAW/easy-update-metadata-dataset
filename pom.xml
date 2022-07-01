@@ -27,7 +27,7 @@
 
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-update-metadata-dataset</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
 
     <name>EASY Update Metadata Dataset</name>
     <url>https://github.com/DANS-KNAW/easy-update-metadata-dataset</url>
@@ -40,7 +40,7 @@
 
     <scm>
         <developerConnection>scm:git:https://github.com/DANS-KNAW/${project.artifactId}</developerConnection>
-        <tag>v1.5.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <dependencies>

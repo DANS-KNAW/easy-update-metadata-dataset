@@ -16,8 +16,7 @@
 
 site_name: easy-update-metadata-dataset
 theme:
-  name: dans
-  disclaimer: false
+  name: readthedocs
 
 repo_name: DANS-KNAW/easy-update-metadata-dataset
 repo_url: https://github.com/DANS-KNAW/easy-update-metadata-dataset
@@ -31,7 +30,6 @@ plugins:
 
 markdown_extensions:
   - attr_list
-  #- legacy_attr
   - admonition
   - codehilite:
       guess_lang: false

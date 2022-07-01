@@ -53,7 +53,7 @@ object Transformer {
           case ("AMD", "datasetState", `expectedOldValue`) =>
             Success(())
           case ("AMD", "datasetState", actualOldValue) =>
-            Failure(new NotImplementedException(s"expected AMD <datasetState> [$expectedOldValue] but found [$actualOldValue]."))
+            Failure(new IllegalStateException(s"expected AMD <datasetState> [$expectedOldValue] but found [$actualOldValue]."))
           case _ =>
             Success(())
         }

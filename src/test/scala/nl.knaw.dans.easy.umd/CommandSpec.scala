@@ -95,6 +95,26 @@ class CommandSpec extends AnyFlatSpec with Matchers with Inside with MockFactory
     UpdateMetadataDataset.testFriendlyRun(fedoraMock).acquireAndGet(identity) shouldBe a[Success[_]]
   }
 
+  it should "continue after reporting a problem" in {
+    expectUtf8Record(record = 2, fedoraID = 1, stream = "EMD")
+    expectOneFedoraGetXml(Failure(new Exception("mocked message")))
+    expectOneFedoraGetXml(Failure(new Exception("mocked message")))
+    expectUtf8Record(record = 5, fedoraID = 2, stream = "DC")
+    expectFedoraUpdates(returnValue = Success(()), times = 2)
+
+    // CSV file with UTF8 in the new value, the file can also be applied manually as explained in its comment column
+    val file = new File("src/test/resources/deasy-UTF8-input.csv")
+    implicit val ps: Parameters = Parameters(test = true, fedoraCredentials = null, input = file)
+    //note that errors are also logged by UpdateMetadataDataset.update
+    UpdateMetadataDataset.testFriendlyRun(fedoraMock).acquireAndGet(identity)
+      .toEither.left.get.getMessage.replace("occurred: ","occurred:") shouldBe
+     """2 exceptions occurred:
+       |--- START OF EXCEPTION LIST ---
+       |(0) failed to process: InputRecord(3,easy-dataset:1,DC,title,Titel van de dataset,Planetoïde van issue EASY-1128), reason: mocked message
+       |(1) failed to process: InputRecord(4,easy-dataset:2,EMD,title,Titel van de dataset,Planetoïde van issue EASY-1128), reason: mocked message
+       |--- END OF EXCEPTION LIST ---.""".stripMargin
+  }
+
   it should "reject CSV when UTF-8 decoding finds invalid characters" in {
     val file = new File("src/test/resources/macroman.txt")
     implicit val ps: Parameters = Parameters(test = true, fedoraCredentials = null, input = file)

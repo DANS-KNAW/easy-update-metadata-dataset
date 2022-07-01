@@ -40,7 +40,7 @@ object UpdateMetadataDataset extends DebugEnhancedLogging {
   def testFriendlyRun(fedora: FedoraStreams)(implicit ps: Parameters): ManagedResource[Try[Unit]] = for {
     reader <- textReader(ps.input)
     result <- InputRecord.parse(reader)
-      .map(_.flatMap(_.map(update(fedora)).find(_.isFailure).getOrElse(Success(()))))
+      .map(_.flatMap(_.map(update(fedora)).collectResults.map(_ => ())))
   } yield result
 
   def textReader(file: File): ManagedResource[Reader] = {
@@ -64,7 +64,10 @@ object UpdateMetadataDataset extends DebugEnhancedLogging {
       _ <- fedora.updateDatastream(record.fedoraID, record.streamID, stringify(newXML))
     } yield ()
   }.recoverWith {
-    case e => Failure(new Exception(s"failed to process: $record, reason: ${ e.getMessage }", e))
+    case e =>
+      val msg = s"failed to process: $record, reason: ${ e.getMessage }"
+      logger.error(msg)
+      Failure(new Exception(msg, e))
   }
 
   private def reportChanges(record: InputRecord, oldXML: Elem, newXML: Seq[Node]): Try[Unit] = Try {
